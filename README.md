@@ -1,10 +1,22 @@
-# Stereo 3D RGB extractors
+# Canopy cover extractor
 
-This repository contains extractors that process data originating from the GT3300C 8MP RGB Camera.
+Canopy Cover by Plot (Percentage of Green Pixels)
 
-### Canopy cover extractor
-This extractor processes binary stereo images and generates plot-level percentage canopy cover traits for BETYdb.
- 
+## Authors
+
+* Zongyang Li, Donald Danforth Plant Science Center, St. Louis, MO
+* Maxwell Burnette, National Supercomputing Applications, Urbana, Il
+* Robert Pless, George Washington University, Washington, DC
+
+
+## Overview
+
+This extractor processes binary stereo images and generates values of plot-level percent canopy cover traits that are inserted into the BETYdb trait database.
+
+ The core idea for this extractor is a plant-soil segmentation. 
+ We apply a threshold to differentiate plant and soil, and do a smoothing after binary processing. 
+ From this difference, it returns a plant area ratio within the bounding box.
+
 _Input_
 
   - Evaluation is triggered whenever a file is added to a dataset
@@ -15,21 +27,57 @@ _Input_
     
 _Output_
 
-  - CSV with canopy coverage traits will be added to original dataset in Clowder
   - The configured BETYdb instance will have canopy coverage traits inserted
 
-### Full field mosaic stitching extractor
+## Algorithm description
 
-This extractor takes a day of stereo BIN files and creates tiled JPG/TIFF images as well as a map HTML page.
+The core idea for this extractor is a plant-soil segmentation. We apply a threshold to differentiate plant and soil, and do a smoothing after binary processing. At last it returns a plant area ratio within the bounding box.
 
-_Input_
+Steps:
 
-  - Currently this should be run on Roger as a job. Date is primary parameter.
+1. Split image data into R,G,B channel, and make a tmp image.
 
-### Stereo Texture Analysis
+2. For each pixel, if G value is T(threshold) higher than R value, make this pixel as foreground, and set the tmp pixel value to 255, so all tmp pixels are 0 or 255.
 
-Computes geometric and texture properties using the [computeFeatures](https://rdrr.io/bioc/EBImage/man/computeFeatures.html) functions in the EBImage R package 
+3. Use a filter to blur this tmp image,
 
-### RGB image quality enhancement extractor
-This extractor is designed to improve the RGB image (Gantry or UAS imaging systems) quality in term of visualization from four different aspects: illumination, contrast, noise, and color.
+4. Threshold the blurred tmp image with a threshold of 128 to get a new mask image that represents our plant (foreground) detections.
 
+5. Output ratio = foreground pixel count / total pixel count
+
+### Parameters
+
+* G - R Threshold is set to 5 for normal situation.
+* Blur image to new mask threshold is set to 128
+
+## Implementation
+
+### Quality Statement
+
+We believe the tested threshold works well in a normal illumination. Below are three examples of successful segmentation:
+
+
+![cc1](figures/normal_canopy_cover.png)
+![cc2](figures/normal_canopy_cover2.png)
+
+![cc3](figures/normal_canopy_cover3.png)
+
+At the same time, there are some limitations with the current threshold. Here are some examples:
+
+1. Image captured in a low illumination.
+
+![2016-10-07__03-06-00-741](figures/low_illumination.jpg)
+
+2. Image captured in a very high illumination.
+
+![2016-09-28__12-19-06-452](figures/high_illumination.jpg)
+
+3. In late season, panicle is covering a lot in the image, and leaves is getting yellow.
+
+![2016-11-15__09-45-50-604](figures/yellow_plant.jpg)
+
+4. Sometimes an unidentified sensor problem results in a blank image.
+
+![2016-10-10__11-04-18-165](figures/sensor_problem.jpg)
+
+For more details, see related discussions, including: https://github.com/terraref/reference-data/issues/186#issuecomment-333631648
