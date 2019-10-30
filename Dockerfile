@@ -1,27 +1,26 @@
-FROM terraref/terrautils:1.4
-MAINTAINER Max Burnette <mburnet2@illinois.edu>
+# Version 1.0 template-transformer-simple 
 
-# Install any programs needed
-RUN useradd -u 49044 extractor \
-    && mkdir -p /home/extractor/sites/ua-mac/raw_data \
-    && mkdir -p /home/extractor/sites/ua-mac/Level_1/stereoTop_geotiff \
-    && mkdir -p /home/extractor/sites/ua-mac/Level_1/stereoTop_canopyCover \
-    && chown -R extractor /home/extractor
+FROM agpipeline/gantry-base-image:latest
+LABEL maintainer="Chris Schnaufer <schnaufer@email.arizona.edu>"
 
-RUN pip install terraref-stereo-rgb
+COPY requirements.txt packages.txt /home/extractor/
 
-# command to run when starting docker
-COPY entrypoint.sh extractor_info.json *.py /home/extractor/
+USER root
+
+RUN [ -s /home/extractor/packages.txt ] && \
+    (echo 'Installing packages' && \
+        apt-get update && \
+        cat /home/extractor/packages.txt | xargs apt-get install -y --no-install-recommends && \
+        rm /home/extractor/packages.txt && \
+        apt-get autoremove -y && \
+        apt-get clean && \
+        rm -rf /var/lib/apt/lists/*) || \
+    (echo 'No packages to install' && \
+        rm /home/extractor/packages.txt)
+
+RUN python3 -m pip install --no-cache-dir -r /home/extractor/requirements.txt && \
+    rm /home/extractor/requirements.txt
 
 USER extractor
-ENTRYPOINT ["/home/extractor/entrypoint.sh"]
-CMD ["extractor"]
 
-# Setup environment variables. These are passed into the container. You can change
-# these to your setup. If RABBITMQ_URI is not set, it will try and use the rabbitmq
-# server that is linked into the container. MAIN_SCRIPT is set to the script to be
-# executed by entrypoint.sh
-ENV RABBITMQ_EXCHANGE="terra" \
-    RABBITMQ_VHOST="%2F" \
-    RABBITMQ_QUEUE="terra.stereo-rgb.canopycover" \
-    MAIN_SCRIPT="terra_canopycover.py"
+COPY *.py /home/extractor/
