@@ -37,7 +37,7 @@ TRAIT_NAME_MAP = {
     'method': 'Canopy Cover Estimation from RGB images'
 }
 
-def get_fields():
+def get_fields() -> list:
     """Returns the supported field names as a list
     """
     return ('local_datetime', 'canopy_cover', 'access_level', 'species', 'site',
@@ -97,7 +97,7 @@ def generate_traits_list(traits: list) -> list:
 
     return trait_list
 
-def calculate_canopycover_masked(pxarray) -> float:
+def calculate_canopycover_masked(pxarray: np.ndarray) -> float:
     """Return greenness percentage of given numpy array of pixels.
 
     Args:
