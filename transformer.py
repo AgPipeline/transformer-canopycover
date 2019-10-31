@@ -1,4 +1,4 @@
-"""Testing instance of transformer
+"""Calculates canopy coverage for plots in georeferenced images
 """
 
 import argparse
