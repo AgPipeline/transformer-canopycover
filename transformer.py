@@ -2,17 +2,19 @@
 """
 
 import argparse
-from datetime import datetime
 import json
 import logging
 import os
+import dateutil.parser
 import yaml
 import numpy as np
 from osgeo import ogr
+import osr
 
 from terrautils.betydb import get_site_boundaries
 from terrautils.spatial import geojson_to_tuples_betydb, find_plots_intersect_boundingbox, \
-     clip_raster, convert_json_geometry
+     clip_raster, convert_json_geometry, geometry_to_geojson, centroid_from_geojson
+from terrautils.imagefile import image_get_geobounds, get_epsg
 import terrautils.lemnatec
 
 import transformer_class    # pylint: disable=import-error
@@ -41,7 +43,7 @@ def get_fields():
     return ('local_datetime', 'canopy_cover', 'access_level', 'species', 'site',
             'citation_author', 'citation_year', 'citation_title', 'method')
 
-def get_default_trait(trait_name):
+def get_default_trait(trait_name: str):
     """Returns the default value for the trait name
     Args:
        trait_name(str): the name of the trait to return the default value for
@@ -53,6 +55,7 @@ def get_default_trait(trait_name):
     global TRAIT_NAME_ARRAY_VALUE
     global TRAIT_NAME_MAP
 
+    # pylint: disable=no-else-return
     if trait_name in TRAIT_NAME_ARRAY_VALUE:
         return []   # Return an empty list when the name matches
     elif trait_name in TRAIT_NAME_MAP:
@@ -60,7 +63,7 @@ def get_default_trait(trait_name):
     else:
         return ""
 
-def get_traits_table():
+def get_traits_table() -> list:
     """Returns the field names and default trait values
 
     Returns:
@@ -74,7 +77,7 @@ def get_traits_table():
 
     return (fields, traits)
 
-def generate_traits_list(traits):
+def generate_traits_list(traits: list) -> list:
     """Returns an array of trait values
 
     Args:
@@ -94,7 +97,7 @@ def generate_traits_list(traits):
 
     return trait_list
 
-def calculate_canopycover_masked(pxarray):
+def calculate_canopycover_masked(pxarray) -> float:
     """Return greenness percentage of given numpy array of pixels.
 
     Args:
@@ -112,7 +115,38 @@ def calculate_canopycover_masked(pxarray):
 
     return ratio
 
-def get_spatial_reference_from_json(geojson):
+def get_image_bounds(image_file: str) -> str:
+    """Loads the boundaries from an image file
+    Arguments:
+        image_file: path to the image to load the bounds from
+    Return:
+        Returns the GEOJSON of the bounds if they could be loaded and converted (if necessary).
+        None is returned if the bounds are loaded or can't be converted
+    """
+    # If the file has a geo shape we store it for clipping
+    bounds = image_get_geobounds(image_file)
+    epsg = get_epsg(image_file)
+    if bounds[0] != np.nan:
+        ring = ogr.Geometry(ogr.wkbLinearRing)
+        ring.AddPoint(bounds[2], bounds[1])     # Upper left
+        ring.AddPoint(bounds[3], bounds[1])     # Upper right
+        ring.AddPoint(bounds[3], bounds[0])     # lower right
+        ring.AddPoint(bounds[2], bounds[0])     # lower left
+        ring.AddPoint(bounds[2], bounds[1])     # Closing the polygon
+
+        poly = ogr.Geometry(ogr.wkbPolygon)
+        poly.AddGeometry(ring)
+
+        ref_sys = osr.SpatialReference()
+        if ref_sys.ImportFromEPSG(int(epsg)) == ogr.OGRERR_NONE:
+            poly.AssignSpatialReference(ref_sys)
+            return geometry_to_geojson(poly)
+
+        logging.warning("Failed to import EPSG %s for image file %s", str(epsg), image_file)
+
+    return None
+
+def get_spatial_reference_from_json(geojson: str):
     """Returns the spatial reference embeddeed in the geojson.
     Args:
         geojson(str): the geojson to get the spatial reference from
@@ -133,19 +167,19 @@ def add_parameters(parser: argparse.ArgumentParser) -> None:
     Arguments:
         parser: instance of argparse
     """
-    parser.add_argument('--citationAuthor', dest="citationAuthor", type=str, nargs='?',
+    parser.add_argument('--citation_author', dest="citationAuthor", type=str, nargs='?',
                         default="Unknown",
                         help="author of citation to use when generating measurements")
 
-    parser.add_argument('--citationTitle', dest="citationTitle", type=str, nargs='?',
+    parser.add_argument('--citation_title', dest="citationTitle", type=str, nargs='?',
                         default="Unknown",
                         help="title of the citation to use when generating measurements")
 
-    parser.add_argument('--citationYear', dest="citationYear", type=str, nargs='?',
+    parser.add_argument('--citation_year', dest="citationYear", type=str, nargs='?',
                         default="Unknown",
                         help="year of citation to use when generating measurements")
 
-    parser.add_argument('--germplasmName', dest="germplasmName", type=str, nargs='?',
+    parser.add_argument('--germplasm_name', dest="germplasmName", type=str, nargs='?',
                         default="Unknown",
                         help="name of the germplasm associated with the canopy cover")
 
@@ -165,7 +199,7 @@ def check_continue(transformer: transformer_class.Transformer, check_md: dict, t
     # Make sure there's a tiff file to process
     image_exts = SUPPORTED_IMAGE_EXTS
     found_file = False
-    for one_file in check_md['list_files']:
+    for one_file in check_md['list_files']():
         ext = os.path.splitext(one_file)[1]
         if ext and ext in image_exts:
             found_file = True
@@ -182,14 +216,9 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict, 
         Returns a dictionary with the results of processing
     """
     # Setup local variables
-    timestamp = datetime.fromisoformat(check_md['timestamp'])
+    timestamp = dateutil.parser.parse(check_md['timestamp'])
     datestamp = timestamp.strftime("%Y-%m-%d")
-    if timestamp.find('T') > 0 and timestamp.rfind('-') > 0 and timestamp.find('T') < timestamp.rfind('-'):
-        # Convert to local time. We can do this due to site definitions having
-        # the time offsets as part of their definition
-        localtime = timestamp[0:timestamp.rfind('-')]
-    else:
-        localtime = timestamp
+    localtime = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
 
     geo_csv_filename = os.path.join(check_md['working_folder'], "canopycover_geostreams.csv")
     bety_csv_filename = os.path.join(check_md['working_folder'], "canopycover.csv")
@@ -225,13 +254,13 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict, 
     num_files = 0
     total_plots_calculated = 0
     logging.debug("Looking for images with an extension of: %s", ",".join(image_exts))
-    for one_file in check_md['list_files']:
+    for one_file in check_md['list_files']():
         ext = os.path.splitext(one_file)[1]
         if not ext or not ext in image_exts:
             logging.debug("Skipping non-supported file '%s'", one_file)
             continue
 
-        image_bounds = get_image_bounds(one_file, transformer.default_epsg)
+        image_bounds = get_image_bounds(one_file)
         if not image_bounds:
             logging.info("Image file does not appear to be geo-referenced '%s'", one_file)
             continue
@@ -248,24 +277,27 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict, 
         for plot_name in overlap_plots:
             plot_bounds = convert_json_geometry(overlap_plots[plot_name], image_spatial_ref)
             tuples = geojson_to_tuples_betydb(yaml.safe_load(plot_bounds))
-            centroid = plot_bounds.Centroid()
+            centroid = json.loads(centroid_from_geojson(plot_bounds))["coordinates"]
 
             try:
-                pxarray = clip_raster(one_file, tuples)
+                logging.debug("Clipping raster to plot")
+                pxarray = clip_raster(one_file, tuples, os.path.join(check_md['working_folder'], "temp.tif"))
                 if pxarray is not None:
                     if len(pxarray.shape) < 3:
                         logging.warning("Unexpected image dimensions for file '%s'", one_file)
                         logging.warning("    expected 3 and received %s", str(pxarray.shape))
                         break
 
+                    logging.debug("Calculating canopy cover")
                     cc_val = calculate_canopycover_masked(np.rollaxis(pxarray, 0, 3))
 
                     # Write the datapoint geographically and otherwise
+                    logging.debug("Writing to CSV files")
                     if geo_file:
                         csv_data = ','.join([plot_name,
                                              'Canopy Cover',
-                                             str(centroid.GetY()),
-                                             str(centroid.GetX()),
+                                             str(centroid[1]),
+                                             str(centroid[0]),
                                              localtime,
                                              one_file,
                                              str(cc_val),

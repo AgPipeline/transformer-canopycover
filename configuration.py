@@ -11,7 +11,7 @@ TRANSFORMER_DESCRIPTION = 'Canopy Cover by Plot (Percentage of Green Pixels)'
 TRANSFORMER_NAME = 'terra.stereo-rgb.canopycover'
 
 # The sensor associated with the transformer
-TRANSFORMER_SENSOR = 'canopyCover'
+TRANSFORMER_SENSOR = 'stereoTop'
 
 # The transformer type (eg: 'rgbmask', 'plotclipper')
 TRANSFORMER_TYPE = 'canopyCover'
