@@ -40,8 +40,8 @@ TRAIT_NAME_MAP = {
 def get_fields() -> list:
     """Returns the supported field names as a list
     """
-    return ('local_datetime', 'canopy_cover', 'access_level', 'species', 'site',
-            'citation_author', 'citation_year', 'citation_title', 'method')
+    return ['local_datetime', 'canopy_cover', 'access_level', 'species', 'site',
+            'citation_author', 'citation_year', 'citation_title', 'method']
 
 def get_default_trait(trait_name: str):
     """Returns the default value for the trait name
@@ -75,7 +75,7 @@ def get_traits_table() -> list:
     for field_name in fields:
         traits[field_name] = get_default_trait(field_name)
 
-    return (fields, traits)
+    return [fields, traits]
 
 def generate_traits_list(traits: list) -> list:
     """Returns an array of trait values
@@ -189,7 +189,7 @@ def check_continue(transformer: transformer_class.Transformer, check_md: dict, t
     Arguments:
         transformer: instance of transformer class
     Return:
-        Returns a tuple containining the return code for continuing or not, and
+        Returns a tuple containing the return code for continuing or not, and
         an error message if there's an error
     """
     # Check that we have what we need
