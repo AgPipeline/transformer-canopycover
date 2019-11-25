@@ -51,7 +51,6 @@ Calculated canopy cover (percentage of green pixels) on a per-plot basis with ge
 
 
 ## Overview
-
 This extractor processes binary stereo images and generates values of plot-level percent canopy cover traits that are inserted into the BETYdb trait database.
 
  The core idea for this extractor is a plant-soil segmentation. 
