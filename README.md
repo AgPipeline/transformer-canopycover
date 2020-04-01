@@ -10,27 +10,15 @@ Calculates canopy cover (the percentage pixels identified as a plant) on a plot 
 
 ## Overview
 
-This extractor processes binary stereo images and generates values of plot-level percent canopy cover traits that are inserted into the BETYdb trait database.
+This Transformer processes binary stereo images and generates values of plot-level percent canopy cover traits that are inserted into the BETYdb trait database.
 
- The core idea for this extractor is a plant-soil segmentation. 
+ The core idea for this Transformer is a plant-soil segmentation. 
  We apply a threshold to differentiate plant and soil, and do a smoothing after binary processing. 
  From this difference, it returns a plant area ratio within the bounding box.
 
-_Input_
-
-  - Evaluation is triggered whenever a file is added to a dataset
-  - Following data must be found
-    - _left.bin image
-    - _right.bin image
-    - dataset metadata for the left+right capture dataset; can be attached as Clowder metadata or included as a metadata.json file
-    
-_Output_
-
-  - The configured BETYdb instance will have canopy coverage traits inserted
-
 ## Algorithm description
 
-The core idea for this extractor is a plant-soil segmentation. We apply a threshold to differentiate plant and soil, and do a smoothing after binary processing. At last it returns a plant area ratio within the bounding box.
+The core idea for this Transformer is a plant-soil segmentation. We apply a threshold to differentiate plant and soil, and do a smoothing after binary processing. At last it returns a plant area ratio within the bounding box.
 
 Steps:
 
