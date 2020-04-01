@@ -1,4 +1,5 @@
 # Transformer Canopy Cover
+
 Calculates canopy cover (the percentage pixels identified as a plant) on a plot level for one or more images
 
 ## Authors
@@ -23,13 +24,9 @@ The core idea for this Transformer is a plant-soil segmentation. We apply a thre
 Steps:
 
 1. Split image data into R,G,B channel, and make a tmp image.
-
 2. For each pixel, if G value is T(threshold) higher than R value, make this pixel as foreground, and set the tmp pixel value to 255, so all tmp pixels are 0 or 255.
-
 3. Use a filter to blur this tmp image,
-
 4. Threshold the blurred tmp image with a threshold of 128 to get a new mask image that represents our plant (foreground) detections.
-
 5. Output ratio = foreground pixel count / total pixel count
 
 ### Parameters
@@ -72,6 +69,7 @@ For more details, see related discussions, including: https://github.com/terrare
 ## Use 
 
 ### Sample Docker Command line
+
 Below is a sample command line that shows how the canopy cover Docker image could be run.
 An explanation of the command line options used follows.
 Be sure to read up on the [docker run](https://docs.docker.com/engine/reference/run/) command line for more information.
