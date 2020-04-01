@@ -46,7 +46,7 @@ Steps:
 
 ### Parameters
 
-* G - R Threshold is set to 5 for normal situation.
+* G - R Threshold is set to 2 for normal situation.
 * Blur image to new mask threshold is set to 128
 
 ### Quality Statement
