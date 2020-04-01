@@ -18,7 +18,7 @@ The output is a csv file that can optionally be inserted into the BETYdb databas
 ## Algorithm description
 
 The core idea of this transformer is to compute the percent of area that is identified as plant in a segmented image.
-https://github.com/AgPipeline/transformer-soilmask/edit/master/README.md
+https://github.com/AgPipeline/transformer-soilmask/blob/master/README.md
 
 ## Use 
 
