@@ -5,9 +5,9 @@ import argparse
 import json
 import logging
 import os
+import numpy as np
 import dateutil.parser
 import yaml
-import numpy as np
 from osgeo import ogr
 import osr
 
@@ -117,6 +117,15 @@ def calculate_canopycover_masked(pxarray):
     if nodata_ratio > 0.75:
         return -1
 
+    # For masked images, all pixels with rgb>0,0,0 are considered canopy
+    data = pxarray[pxarray[:, :, 3] == 255]
+    canopy = len(data[sum(data[:, 0:3], 1) > 0])
+    ratio = canopy / float(total_size - nodata)
+    # Scale ratio from 0-1 to 0-100
+    ratio *= 100.0
+
+    return ratio
+
 
 def get_image_bounds(image_file: str) -> str:
     """Loads the boundaries from an image file
@@ -190,18 +199,16 @@ def add_parameters(parser: argparse.ArgumentParser) -> None:
 
 
 # pylint: disable=unused-argument
-def check_continue(transformer: transformer_class.Transformer, check_md: dict, transformer_md: dict,
-                   full_md: dict) -> tuple:
+def check_continue(check_md: dict) -> tuple:
     """Checks if conditions are right for continuing processing
     Arguments:
-        transformer: instance of transformer class
     Return:
         Returns a tuple containing the return code for continuing or not, and
         an error message if there's an error
     """
     # Check that we have what we need
     if not 'list_files' in check_md:
-        return (-1, "Unable to find list of files associated with this request")
+        return -1, "Unable to find list of files associated with this request"
 
     # Make sure there's a tiff file to process
     image_exts = SUPPORTED_IMAGE_EXTS
@@ -213,14 +220,14 @@ def check_continue(transformer: transformer_class.Transformer, check_md: dict, t
             break
 
     # Return the appropriate result
-    return (0) if found_file else (-1, "Unable to find an image file to work with")
+    return 0 if found_file else (-1, "Unable to find an image file to work with")
 
 
-def perform_process(transformer: transformer_class.Transformer, check_md: dict, transformer_md: dict,
-                    full_md: dict) -> dict:
+def perform_process(transformer: transformer_class.Transformer, check_md: dict) -> dict:
     """Performs the processing of the data
     Arguments:
         transformer: instance of transformer class
+        check_md:
     Return:
         Returns a dictionary with the results of processing
     """
@@ -237,18 +244,19 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict, 
     (fields, traits) = get_traits_table()
 
     # Setup default trait values
-    if not transformer.args.germplasmName is None:
+    if transformer.args.germplasmName is not None:
         traits['species'] = transformer.args.germplasmName
-    if not transformer.args.citationAuthor is None:
+    if transformer.args.citationAuthor is not None:
         traits['citation_author'] = transformer.args.citationAuthor
-    if not transformer.args.citationTitle is None:
+    if transformer.args.citationTitle is not None:
         traits['citation_title'] = transformer.args.citationTitle
-    if not transformer.args.citationYear is None:
+    if transformer.args.citationYear is not None:
         traits['citation_year'] = transformer.args.citationYear
     else:
-        traits['citation_year'] = (timestamp.year)
+        traits['citation_year'] = timestamp.year
 
-    geo_csv_header = ','.join(['site', 'trait', 'lat', 'lon', 'dp_time', 'source', 'value', 'timestamp'])
+    geo_csv_header = ','.join(['site', 'trait', 'lat', 'lon', 'dp_time',
+                               'source', 'value', 'timestamp'])
     bety_csv_header = ','.join(map(str, fields))
     if geo_file:
         geo_file.write(geo_csv_header + "\n")
@@ -290,7 +298,8 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict, 
 
             try:
                 logging.debug("Clipping raster to plot")
-                pxarray = clip_raster(one_file, tuples, os.path.join(check_md['working_folder'], "temp.tif"))
+                pxarray = clip_raster(one_file, tuples, os.path.join(check_md['working_folder'],
+                                                                     "temp.tif"))
                 if pxarray is not None:
                     if len(pxarray.shape) < 3:
                         logging.warning("Unexpected image dimensions for file '%s'", one_file)
