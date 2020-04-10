@@ -199,7 +199,8 @@ def add_parameters(parser: argparse.ArgumentParser) -> None:
 
 
 # pylint: disable=unused-argument
-def check_continue(transformer: transformer_class.Transformer, check_md: dict, transformer_md: dict, full_md: dict) -> tuple:
+def check_continue(transformer: transformer_class.Transformer, check_md: dict,
+                   transformer_md: dict, full_md: dict) -> tuple:
     """Checks if conditions are right for continuing processing
     Arguments:
         transformer: instance of transformer class
@@ -227,7 +228,8 @@ def check_continue(transformer: transformer_class.Transformer, check_md: dict, t
     return (0) if found_file else (-1, "Unable to find an image file to work with")
 
 
-def perform_process(transformer: transformer_class.Transformer, check_md: dict, transformer_md: dict, full_md: dict) -> dict:
+def perform_process(transformer: transformer_class.Transformer, check_md: dict,
+                    transformer_md: dict, full_md: dict) -> dict:
     """Performs the processing of the data
     Arguments:
         transformer: instance of transformer class
