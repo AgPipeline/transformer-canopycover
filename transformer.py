@@ -199,16 +199,20 @@ def add_parameters(parser: argparse.ArgumentParser) -> None:
 
 
 # pylint: disable=unused-argument
-def check_continue(check_md: dict) -> tuple:
+def check_continue(transformer: transformer_class.Transformer, check_md: dict, transformer_md: dict, full_md: dict) -> tuple:
     """Checks if conditions are right for continuing processing
     Arguments:
+        transformer: instance of transformer class
+        check_md: dictionary
+        transformer_md: dictionary
+        full_md: dictionary
     Return:
         Returns a tuple containing the return code for continuing or not, and
         an error message if there's an error
     """
     # Check that we have what we need
     if not 'list_files' in check_md:
-        return -1, "Unable to find list of files associated with this request"
+        return (-1, "Unable to find list of files associated with this request")
 
     # Make sure there's a tiff file to process
     image_exts = SUPPORTED_IMAGE_EXTS
@@ -220,14 +224,16 @@ def check_continue(check_md: dict) -> tuple:
             break
 
     # Return the appropriate result
-    return 0 if found_file else (-1, "Unable to find an image file to work with")
+    return (0) if found_file else (-1, "Unable to find an image file to work with")
 
 
-def perform_process(transformer: transformer_class.Transformer, check_md: dict) -> dict:
+def perform_process(transformer: transformer_class.Transformer, check_md: dict, transformer_md: dict, full_md: dict) -> dict:
     """Performs the processing of the data
     Arguments:
         transformer: instance of transformer class
-        check_md:
+        check_md: dictionary
+        transformer_md: dictionary
+        full_md: dictionary
     Return:
         Returns a dictionary with the results of processing
     """
