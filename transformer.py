@@ -102,7 +102,7 @@ def generate_traits_list(traits: list) -> list:
     return trait_list
 
 
-def calculate_canopycover_masked(pxarray):
+def calculate_canopycover_masked(pxarray: np.ndarray) -> float:
     """Return greenness percentage of given numpy array of pixels.
     Arguments:
       pxarray (numpy array): rgba image where alpha 255=data and alpha 0=NoData
