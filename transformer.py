@@ -5,19 +5,19 @@ import argparse
 import json
 import logging
 import os
+import numpy as np
 import dateutil.parser
 import yaml
-import numpy as np
 from osgeo import ogr
 import osr
 
 from terrautils.betydb import get_site_boundaries
 from terrautils.spatial import geojson_to_tuples_betydb, find_plots_intersect_boundingbox, \
-     clip_raster, convert_json_geometry, geometry_to_geojson, centroid_from_geojson
+    clip_raster, convert_json_geometry, geometry_to_geojson, centroid_from_geojson
 from terrautils.imagefile import image_get_geobounds, get_epsg
 import terrautils.lemnatec
 
-import transformer_class    # pylint: disable=import-error
+import transformer_class  # pylint: disable=import-error
 
 terrautils.lemnatec.SENSOR_METADATA_CACHE = os.path.dirname(os.path.realpath(__file__))
 
@@ -37,11 +37,13 @@ TRAIT_NAME_MAP = {
     'method': 'Green Canopy Cover Estimation from Field Scanner RGB images'
 }
 
+
 def get_fields() -> list:
     """Returns the supported field names as a list
     """
     return ['local_datetime', 'canopy_cover', 'access_level', 'species', 'site',
             'citation_author', 'citation_year', 'citation_title', 'method']
+
 
 def get_default_trait(trait_name: str):
     """Returns the default value for the trait name
@@ -57,11 +59,12 @@ def get_default_trait(trait_name: str):
 
     # pylint: disable=no-else-return
     if trait_name in TRAIT_NAME_ARRAY_VALUE:
-        return []   # Return an empty list when the name matches
+        return []  # Return an empty list when the name matches
     elif trait_name in TRAIT_NAME_MAP:
         return TRAIT_NAME_MAP[trait_name]
     else:
         return ""
+
 
 def get_traits_table() -> list:
     """Returns the field names and default trait values
@@ -76,6 +79,7 @@ def get_traits_table() -> list:
         traits[field_name] = get_default_trait(field_name)
 
     return [fields, traits]
+
 
 def generate_traits_list(traits: list) -> list:
     """Returns an array of trait values
@@ -97,23 +101,31 @@ def generate_traits_list(traits: list) -> list:
 
     return trait_list
 
+
 def calculate_canopycover_masked(pxarray: np.ndarray) -> float:
     """Return greenness percentage of given numpy array of pixels.
-
-    Args:
-      pxarray (numpy array): rgb image
-
-    Return:
+    Arguments:
+      pxarray (numpy array): rgba image where alpha 255=data and alpha 0=NoData
+    Returns:
       (float): greenness percentage
     """
 
-    # For masked images, all nonzero pixels are considered canopy
-    nonzeros = np.count_nonzero(pxarray)
-    ratio = nonzeros/float(pxarray.size)
+    # If > 75% is NoData, return a -1 ccvalue for omission later
+    total_size = pxarray.shape[0] * pxarray.shape[1]
+    nodata = np.count_nonzero(pxarray[:, :, 3] == 0)
+    nodata_ratio = nodata / float(total_size)
+    if nodata_ratio > 0.75:
+        return -1
+
+    # For masked images, all pixels with rgb>0,0,0 are considered canopy
+    data = pxarray[pxarray[:, :, 3] == 255]
+    canopy = len(data[sum(data[:, 0:3], 1) > 0])
+    ratio = canopy / float(total_size - nodata)
     # Scale ratio from 0-1 to 0-100
     ratio *= 100.0
 
     return ratio
+
 
 def get_image_bounds(image_file: str) -> str:
     """Loads the boundaries from an image file
@@ -128,11 +140,11 @@ def get_image_bounds(image_file: str) -> str:
     epsg = get_epsg(image_file)
     if bounds[0] != np.nan:
         ring = ogr.Geometry(ogr.wkbLinearRing)
-        ring.AddPoint(bounds[2], bounds[1])     # Upper left
-        ring.AddPoint(bounds[3], bounds[1])     # Upper right
-        ring.AddPoint(bounds[3], bounds[0])     # lower right
-        ring.AddPoint(bounds[2], bounds[0])     # lower left
-        ring.AddPoint(bounds[2], bounds[1])     # Closing the polygon
+        ring.AddPoint(bounds[2], bounds[1])  # Upper left
+        ring.AddPoint(bounds[3], bounds[1])  # Upper right
+        ring.AddPoint(bounds[3], bounds[0])  # lower right
+        ring.AddPoint(bounds[2], bounds[0])  # lower left
+        ring.AddPoint(bounds[2], bounds[1])  # Closing the polygon
 
         poly = ogr.Geometry(ogr.wkbPolygon)
         poly.AddGeometry(ring)
@@ -145,6 +157,7 @@ def get_image_bounds(image_file: str) -> str:
         logging.warning("Failed to import EPSG %s for image file %s", str(epsg), image_file)
 
     return None
+
 
 def get_spatial_reference_from_json(geojson: str):
     """Returns the spatial reference embeddeed in the geojson.
@@ -161,6 +174,7 @@ def get_spatial_reference_from_json(geojson: str):
         return current_geom.GetSpatialReference()
 
     raise RuntimeError("Specified JSON does not have a valid sptial reference")
+
 
 def add_parameters(parser: argparse.ArgumentParser) -> None:
     """Adds parameters
@@ -183,11 +197,16 @@ def add_parameters(parser: argparse.ArgumentParser) -> None:
                         default="Unknown",
                         help="name of the germplasm associated with the canopy cover")
 
-#pylint: disable=unused-argument
-def check_continue(transformer: transformer_class.Transformer, check_md: dict, transformer_md: dict, full_md: dict) -> tuple:
+
+# pylint: disable=unused-argument
+def check_continue(transformer: transformer_class.Transformer, check_md: dict,
+                   transformer_md: dict, full_md: dict) -> tuple:
     """Checks if conditions are right for continuing processing
     Arguments:
         transformer: instance of transformer class
+        check_md: dictionary
+        transformer_md: dictionary
+        full_md: dictionary
     Return:
         Returns a tuple containing the return code for continuing or not, and
         an error message if there's an error
@@ -208,10 +227,15 @@ def check_continue(transformer: transformer_class.Transformer, check_md: dict, t
     # Return the appropriate result
     return (0) if found_file else (-1, "Unable to find an image file to work with")
 
-def perform_process(transformer: transformer_class.Transformer, check_md: dict, transformer_md: dict, full_md: dict) -> dict:
+
+def perform_process(transformer: transformer_class.Transformer, check_md: dict,
+                    transformer_md: dict, full_md: dict) -> dict:
     """Performs the processing of the data
     Arguments:
         transformer: instance of transformer class
+        check_md: dictionary
+        transformer_md: dictionary
+        full_md: dictionary
     Return:
         Returns a dictionary with the results of processing
     """
@@ -228,18 +252,19 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict, 
     (fields, traits) = get_traits_table()
 
     # Setup default trait values
-    if not transformer.args.germplasmName is None:
+    if transformer.args.germplasmName is not None:
         traits['species'] = transformer.args.germplasmName
-    if not transformer.args.citationAuthor is None:
+    if transformer.args.citationAuthor is not None:
         traits['citation_author'] = transformer.args.citationAuthor
-    if not transformer.args.citationTitle is None:
+    if transformer.args.citationTitle is not None:
         traits['citation_title'] = transformer.args.citationTitle
-    if not transformer.args.citationYear is None:
+    if transformer.args.citationYear is not None:
         traits['citation_year'] = transformer.args.citationYear
     else:
-        traits['citation_year'] = (timestamp.year)
+        traits['citation_year'] = timestamp.year
 
-    geo_csv_header = ','.join(['site', 'trait', 'lat', 'lon', 'dp_time', 'source', 'value', 'timestamp'])
+    geo_csv_header = ','.join(['site', 'trait', 'lat', 'lon', 'dp_time',
+                               'source', 'value', 'timestamp'])
     bety_csv_header = ','.join(map(str, fields))
     if geo_file:
         geo_file.write(geo_csv_header + "\n")
@@ -281,7 +306,8 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict, 
 
             try:
                 logging.debug("Clipping raster to plot")
-                pxarray = clip_raster(one_file, tuples, os.path.join(check_md['working_folder'], "temp.tif"))
+                pxarray = clip_raster(one_file, tuples, os.path.join(check_md['working_folder'],
+                                                                     "temp.tif"))
                 if pxarray is not None:
                     if len(pxarray.shape) < 3:
                         logging.warning("Unexpected image dimensions for file '%s'", one_file)
