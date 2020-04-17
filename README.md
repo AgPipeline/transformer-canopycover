@@ -11,7 +11,7 @@ Calculates canopy cover (the percentage pixels identified as a plant) on a plot 
 
 ## Overview
 
-This Transformer processes a soil mask image and generates values of plot-level percent canopy cover traits. From a mask, it generates a scalar value representing the percent of the image that is plant. 
+This Transformer processes a soil mask image and generates a value of plot-level percent canopy cover. This is a scalar value representing the percent of the image mask that is classified as plant. 
 
 The output is a csv file that can optionally be inserted into the BETYdb database.
 
