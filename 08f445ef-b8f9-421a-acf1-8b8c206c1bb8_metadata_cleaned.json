@@ -1,0 +1,155 @@
+{
+  "@context": [
+    "https://clowder.ncsa.illinois.edu/contexts/metadata.jsonld",
+    {
+      "@vocab": "https://terraref.ncsa.illinois.edu/metadata/uamac#"
+    }
+  ],
+  "content": {
+    "gantry_variable_metadata": {
+      "datetime": "2018-02-01T10:39:36-07:00",
+      "date": "2018-02-01",
+      "position_m": {
+        "x": "175.023",
+        "y": "0.001",
+        "z": "0.43"
+      },
+      "scan_direction_is_positive": "False",
+      "script_path_on_disk": "C:\\LemnaTec\\StoredScripts\\Hyperspec_Wheat5_DurumPanel_Ranges.cs",
+      "script_name": "hyperspec_wheat5_durumpanel_ranges",
+      "script_hash": "ea1593c2-52f9-45c0-83d2-2ba463739e6b",
+      "fullfield_eligible": "True"
+    },
+    "gantry_fixed_metadata": {
+      "url": "https://github.com/terraref/sensor-metadata/blob/master//sensors/scanalyzer/sensor_fixed_metadata.json"
+    },
+    "sensor_fixed_metadata": {
+      "url": "https://github.com/terraref/sensor-metadata/blob/master//sensors/stereo/sensor_fixed_metadata.json"
+    },
+    "sensor_variable_metadata": {
+      "rotate_flip_type": {
+        "left": "0",
+        "right": "0"
+      },
+      "crosshairs": {
+        "left": "0",
+        "right": "0"
+      },
+      "exposure": {
+        "left": "2500",
+        "right": "2500"
+      },
+      "autoexposure": {
+        "left": "0",
+        "right": "0"
+      },
+      "gain": {
+        "left": "1500",
+        "right": "1500"
+      },
+      "autogain": {
+        "left": "0",
+        "right": "0"
+      },
+      "gamma": {
+        "left": "50",
+        "right": "50"
+      },
+      "rwhitebalanceratio": {
+        "left": "170",
+        "right": "155"
+      },
+      "bwhitebalanceratio": {
+        "left": "103",
+        "right": "110"
+      },
+      "height_image_pixels": {
+        "left": "2472",
+        "right": "2472"
+      },
+      "width_image_pixels": {
+        "left": "3296",
+        "right": "3296"
+      },
+      "image_format": {
+        "left": "BayerGR8",
+        "right": "BayerGR8"
+      }
+    },
+    "terraref_cleaned_metadata": true,
+    "experiment_metadata": [
+      {
+        "name": "MAC Season 5: Winter Wheat",
+        "start_date": "2017-11-20",
+        "end_date": "2018-04-05",
+        "url": "https://terraref.ncsa.illinois.edu/bety/experiments/6000000033"
+      }
+    ],
+    "site_metadata": [
+      {
+        "sitename": "MAC Field Scanner Season 5 Range 45 Column 15",
+        "url": ""
+      },
+      "sitename is the plot that contains the image centroid"
+    ],
+    "spatial_metadata": {
+      "left": {
+        "bounding_box": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              33.07613316761756,
+              -111.97481871782885
+            ],
+            [
+              33.07613316761756,
+              -111.97481042350441
+            ],
+            [
+              33.07612370329868,
+              -111.97481042350441
+            ],
+            [
+              33.07612370329868,
+              -111.97481871782885
+            ]
+          ]
+        },
+        "centroid": [
+          33.076128435458116,
+          -111.97481457066664
+        ]
+      },
+      "right": {
+        "bounding_box": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              33.07613623493291,
+              -111.97481871887886
+            ],
+            [
+              33.07613623493291,
+              -111.97481042455411
+            ],
+            [
+              33.07612677061404,
+              -111.97481042455411
+            ],
+            [
+              33.07612677061404,
+              -111.97481871887886
+            ]
+          ]
+        },
+        "centroid": [
+          33.07613150277348,
+          -111.97481457171648
+        ]
+      }
+    }
+  },
+  "agent": {
+    "@type": "cat:user"
+  }
+}

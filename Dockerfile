@@ -24,3 +24,4 @@ RUN python3 -m pip install --no-cache-dir -r /home/extractor/requirements.txt &&
 USER extractor
 
 COPY *.py /home/extractor/
+WORKDIR /home/extractor
