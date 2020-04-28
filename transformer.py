@@ -309,6 +309,7 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict,
                 pxarray = clip_raster(one_file, tuples, os.path.join(check_md['working_folder'],
                                                                      "temp.tif"))
                 if pxarray is not None:
+
                     if len(pxarray.shape) < 3:
                         logging.warning("Unexpected image dimensions for file '%s'", one_file)
                         logging.warning("    expected 3 and received %s", str(pxarray.shape))
