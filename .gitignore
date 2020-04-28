@@ -35,7 +35,7 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit transformer-canopycover / coverage reports
+# Unit test / coverage reports
 htmlcov/
 .tox/
 .coverage

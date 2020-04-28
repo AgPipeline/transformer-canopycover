@@ -102,4 +102,4 @@ Note that the paths provided are relative to the running image (see the --mount 
 - `--citation_author "<author name>"` the name of the author to cite in the resulting CSV file(s)
 - `--citation_title "<title>"` the title of the citation to store in the resulting CSV file(s)
 - `--citation_year "<year>"` the year of the citation to store in the resulting CSV file(s)
-- `"/mnt/rgb_mask_L2_my-site_2018-10-01__14-20-40_mask.tif"` the names of one or more image files to use when calculating plot-level canopy cover
+- `"/mnt/<image name>.tif"` the names of one or more image files to use when calculating plot-level canopy cover
