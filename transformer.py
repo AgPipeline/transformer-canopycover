@@ -5,6 +5,7 @@ import argparse
 import json
 import logging
 import os
+from typing import Optional
 import numpy as np
 import dateutil.parser
 import yaml
@@ -119,7 +120,7 @@ def calculate_canopycover_masked(pxarray: np.ndarray) -> float:
 
     # For masked images, all pixels with rgb>0,0,0 are considered canopy
     data = pxarray[pxarray[:, :, 3] == 255]
-    canopy = len(data[sum(data[:, 0:3], 1) > 0])
+    canopy = len(data[np.sum(data[:, 0:3], 1) > 0])
     ratio = canopy / float(total_size - nodata)
     # Scale ratio from 0-1 to 0-100
     ratio *= 100.0
@@ -127,7 +128,7 @@ def calculate_canopycover_masked(pxarray: np.ndarray) -> float:
     return ratio
 
 
-def get_image_bounds(image_file: str) -> str:
+def get_image_bounds(image_file: str) -> Optional[str]:
     """Loads the boundaries from an image file
     Arguments:
         image_file: path to the image to load the bounds from
