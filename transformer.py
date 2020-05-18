@@ -5,6 +5,7 @@ import argparse
 import json
 import logging
 import os
+from typing import Optional
 import numpy as np
 import dateutil.parser
 import yaml
@@ -127,7 +128,7 @@ def calculate_canopycover_masked(pxarray: np.ndarray) -> float:
     return ratio
 
 
-def get_image_bounds(image_file: str) -> str:
+def get_image_bounds(image_file: str) -> Optional[str]:
     """Loads the boundaries from an image file
     Arguments:
         image_file: path to the image to load the bounds from
