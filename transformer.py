@@ -5,7 +5,6 @@ import argparse
 import json
 import logging
 import os
-from typing import Optional
 import numpy as np
 import dateutil.parser
 import yaml
@@ -128,7 +127,7 @@ def calculate_canopycover_masked(pxarray: np.ndarray) -> float:
     return ratio
 
 
-def get_image_bounds(image_file: str) -> Optional[str]:
+def get_image_bounds(image_file: str) -> str:
     """Loads the boundaries from an image file
     Arguments:
         image_file: path to the image to load the bounds from
@@ -310,6 +309,7 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict,
                 pxarray = clip_raster(one_file, tuples, os.path.join(check_md['working_folder'],
                                                                      "temp.tif"))
                 if pxarray is not None:
+
                     if len(pxarray.shape) < 3:
                         logging.warning("Unexpected image dimensions for file '%s'", one_file)
                         logging.warning("    expected 3 and received %s", str(pxarray.shape))
