@@ -25,6 +25,10 @@ This algorithm expects a one-layer geotiff file with the extention .tif or .tiff
 ## Use 
 
 ### Sample Docker Command line
+First build the Docker image using the Dockerfile, which in this case will be named agpipeline/canopycover:3.0 
+Read up on [docker build](https://docs.docker.com/engine/reference/commandline/build/) if needed.
+
+```docker build -t agpipeline/canopycover:3.0 ./```
 
 Below is a sample command line that shows how the canopy cover Docker image could be run.
 An explanation of the command line options used follows.
@@ -59,3 +63,19 @@ Note that the paths provided are relative to the running image (see the --mount 
 - `--citation_title "<title>"` the title of the citation to store in the resulting CSV file(s)
 - `--citation_year "<year>"` the year of the citation to store in the resulting CSV file(s)
 - `"/mnt/rgb_mask_L2_my-site_2018-10-01__14-20-40_mask.tif"` the names of one or more image files to use when calculating plot-level canopy cover
+
+**Testing the Transformer** \
+In order to make sure that the canopy cover transformer is functioning correctly, create an image that is all black
+using an image editor such as [gimp](https://www.gimp.org) and export the result to the working directory as a .tif or .tiff file.
+Move this file to the project directory and then using the above docker run command, make sure that -1 is returned. Doing the same
+with a completely white image, make sure that 0 is returned. 
+
+The reason this should be done is in order to test the extremes for image data.
+
+Next test on these [sample plot images](https://drive.google.com/file/d/1xWRU0YgK3Y9aUy5TdRxj14gmjLlozGxo/view) and make sure
+that reasonable values are returned.
+
+**Deploying the Transformer** \
+Once you have used the transformer on your image data, you can upload your docker image to [Docker Hub](https://hub.docker.com)
+so that it can be accessed remotely. Use a tutorial such as [this one](https://ropenscilabs.github.io/r-docker-tutorial/04-Dockerhub.html)
+in order to upload your image to Docker Hub
