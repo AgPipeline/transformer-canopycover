@@ -5,22 +5,15 @@ import argparse
 import json
 import logging
 import os
+import tempfile
 from typing import Optional
 import numpy as np
-import yaml
 import dateutil.parser
-from osgeo import ogr
-import osr
+import yaml
+from osgeo import gdal, osr, ogr
 
-from terrautils.betydb import get_site_boundaries
-from terrautils.spatial import geojson_to_tuples_betydb, find_plots_intersect_boundingbox, \
-    clip_raster, convert_json_geometry, geometry_to_geojson, centroid_from_geojson
-from terrautils.imagefile import image_get_geobounds, get_epsg
-import terrautils.lemnatec
 
 import transformer_class  # pylint: disable=import-error
-
-terrautils.lemnatec.SENSOR_METADATA_CACHE = os.path.dirname(os.path.realpath(__file__))
 
 # The image file name extensions we support
 SUPPORTED_IMAGE_EXTS = [".tif", ".tiff"]
@@ -37,6 +30,64 @@ TRAIT_NAME_MAP = {
     'citation_title': 'Maricopa Field Station Data and Metadata',
     'method': 'Green Canopy Cover Estimation from Field Scanner RGB images'
 }
+
+
+def get_epsg(filename):
+    """Returns the EPSG of the georeferenced image file
+    Args:
+        filename(str): path of the file to retrieve the EPSG code from
+    Return:
+        Returns the found EPSG code, or None if it's not found or an error ocurred
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        src = gdal.Open(filename)
+
+        proj = osr.SpatialReference(wkt=src.GetProjection())
+
+        return proj.GetAttrValue('AUTHORITY', 1)
+    # pylint: disable=broad-except
+    except Exception as ex:
+        logger.warn("[get_epsg] Exception caught: %s", str(ex))
+    # pylint: enable=broad-except
+
+    return None
+
+
+def get_image_file_geobounds(filename):
+    """Uses gdal functionality to retrieve rectilinear boundaries from the file
+    Args:
+        filename(str): path of the file to get the boundaries from
+    Returns:
+        The upper-left and calculated lower-right boundaries of the image in a list upon success.
+        The values are returned in following order: min_y, max_y, min_x, max_x. A list of numpy.nan
+        is returned if the boundaries can't be determined
+    """
+    try:
+        str_filename = str(filename)
+        epsg = get_epsg(str_filename)
+        if str(epsg) != "4326":
+            _, tmp_name = tempfile.mkstemp()
+            src = gdal.Open(str_filename)
+            gdal.Warp(tmp_name, src, dstSRS='EPSG:4326')
+            str_filename = tmp_name
+
+        src = gdal.Open(str_filename)
+        ulx, xres, _, uly, _, yres = src.GetGeoTransform()
+        lrx = ulx + (src.RasterXSize * xres)
+        lry = uly + (src.RasterYSize * yres)
+
+        min_y = min(uly, lry)
+        max_y = max(uly, lry)
+        min_x = min(ulx, lrx)
+        max_x = max(ulx, lrx)
+
+        return [min_y, max_y, min_x, max_x]
+    except Exception as ex:
+        logging.info("[get_image_file_geobounds] Exception caught: %s", str(ex))
+
+    return [np.nan, np.nan, np.nan, np.nan]
 
 
 def get_fields() -> list:
@@ -110,22 +161,57 @@ def calculate_canopycover_masked(pxarray: np.ndarray) -> float:
     Returns:
       (float): greenness percentage
     """
-
-    # If > 75% is NoData, return a -1 ccvalue for omission later
-    total_size = pxarray.shape[0] * pxarray.shape[1]
-    nodata = np.count_nonzero(pxarray[:, :, 3] == 0)
-    nodata_ratio = nodata / float(total_size)
-    if nodata_ratio > 0.75:
-        return -1
-
-    # For masked images, all pixels with rgb>0,0,0 are considered canopy
-    data = pxarray[pxarray[:, :, 3] == 255]
-    canopy = len(data[np.sum(data[:, 0:3], 1) > 0])
-    ratio = canopy / float(total_size - nodata)
+    nonzeros = np.count_nonzero(pxarray)
+    ratio = nonzeros/float(pxarray.size)
     # Scale ratio from 0-1 to 0-100
     ratio *= 100.0
 
     return ratio
+
+    # # If > 75% is NoData, return a -1 ccvalue for omission later
+    # total_size = pxarray.shape[0] * pxarray.shape[1]
+    # nodata = np.count_nonzero(pxarray[:, :, 3] == 0)
+    # nodata_ratio = nodata / float(total_size)
+    # if nodata_ratio > 0.75:
+    #     return -1
+    #
+    # # For masked images, all pixels with rgb>0,0,0 are considered canopy
+    # data = pxarray[pxarray[:, :, 3] == 255]
+    # canopy = len(data[np.sum(data[:, 0:3], 1) > 0])
+    # ratio = canopy / float(total_size - nodata)
+    # # Scale ratio from 0-1 to 0-100
+    # ratio *= 100.0
+    #
+    # return ratio
+
+
+def geometry_to_geojson(geom: ogr.Geometry, alt_coord_type: str = None, alt_coord_code: str = None) -> str:
+    """Converts a geometry to geojson.
+    Args:
+        geom: The geometry to convert to JSON
+        alt_coord_type: the alternate geographic coordinate system type if geometry doesn't have one defined
+        alt_coord_code: the alternate geographic coordinate system associated with the type
+    Returns:
+        The geojson string for the geometry
+    Note:
+        If the geometry doesn't have a spatial reference associated with it, both the default
+        coordinate system type and code must be specified for a coordinate system to be assigned to
+        the returning JSON. The original geometry is left unaltered.
+    """
+    ref_sys = geom.GetSpatialReference()
+    geom_json = json.loads(geom.ExportToJson())
+    if not ref_sys:
+        if alt_coord_type and alt_coord_code:
+            geom_json['crs'] = {'type': str(alt_coord_type), 'properties': {'code': str(alt_coord_code)}}
+    else:
+        geom_json['crs'] = {
+            'type': ref_sys.GetAttrValue("AUTHORITY", 0),
+            'properties': {
+                'code': ref_sys.GetAttrValue("AUTHORITY", 1)
+            }
+        }
+
+    return json.dumps(geom_json)
 
 
 def get_image_bounds(image_file: str) -> Optional[str]:
@@ -137,7 +223,7 @@ def get_image_bounds(image_file: str) -> Optional[str]:
         None is returned if the bounds are loaded or can't be converted
     """
     # If the file has a geo shape we store it for clipping
-    bounds = image_get_geobounds(image_file)
+    bounds = get_image_file_geobounds(image_file)
     epsg = get_epsg(image_file)
     if bounds[0] != np.nan:
         ring = ogr.Geometry(ogr.wkbLinearRing)
@@ -199,6 +285,7 @@ def add_parameters(parser: argparse.ArgumentParser) -> None:
                         help="name of the germplasm associated with the canopy cover")
 
 
+# pylint: disable=unused-argument
 def check_continue(transformer: transformer_class.Transformer, check_md: dict,
                    transformer_md: dict, full_md: dict) -> tuple:
     """Checks if conditions are right for continuing processing
@@ -211,7 +298,6 @@ def check_continue(transformer: transformer_class.Transformer, check_md: dict,
         Returns a tuple containing the return code for continuing or not, and
         an error message if there's an error
     """
-    # pylint: disable=unused-argument
     # Check that we have what we need
     if not 'list_files' in check_md:
         return (-1, "Unable to find list of files associated with this request")
@@ -229,6 +315,14 @@ def check_continue(transformer: transformer_class.Transformer, check_md: dict,
     return (0) if found_file else (-1, "Unable to find an image file to work with")
 
 
+def centroid_from_geojson(geojson):
+    """Return centroid lat/lon of a geojson object."""
+    geom_poly = ogr.CreateGeometryFromJson(geojson)
+    centroid = geom_poly.Centroid()
+
+    return centroid.ExportToJson()
+
+
 def perform_process(transformer: transformer_class.Transformer, check_md: dict,
                     transformer_md: dict, full_md: dict) -> dict:
     """Performs the processing of the data
@@ -240,9 +334,6 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict,
     Return:
         Returns a dictionary with the results of processing
     """
-    # pylint: disable=unused-argument
-    # Disable checks that would make code harder to read and maintain
-    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     # Setup local variables
     timestamp = dateutil.parser.parse(check_md['timestamp'])
     datestamp = timestamp.strftime("%Y-%m-%d")
@@ -275,8 +366,8 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict,
     if bety_file:
         bety_file.write(bety_csv_header + "\n")
 
-    all_plots = get_site_boundaries(datestamp, city='Maricopa')
-    logging.debug("Found %s plots for date %s", str(len(all_plots)), str(datestamp))
+#    all_plots = get_site_boundaries(datestamp, city='Maricopa')
+#    logging.debug("Found %s plots for date %s", str(len(all_plots)), str(datestamp))
 
     # Loop through finding all image files
     image_exts = SUPPORTED_IMAGE_EXTS
@@ -285,7 +376,7 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict,
     logging.debug("Looking for images with an extension of: %s", ",".join(image_exts))
     for one_file in check_md['list_files']():
         ext = os.path.splitext(one_file)[1]
-        if not ext or ext not in image_exts:
+        if not ext or not ext in image_exts:
             logging.debug("Skipping non-supported file '%s'", one_file)
             continue
 
@@ -294,24 +385,27 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict,
             logging.info("Image file does not appear to be geo-referenced '%s'", one_file)
             continue
 
-        overlap_plots = find_plots_intersect_boundingbox(image_bounds, all_plots, fullmac=True)
-        num_plots = len(overlap_plots)
+#        overlap_plots = find_plots_intersect_boundingbox(image_bounds, all_plots, fullmac=True)
+#        num_plots = len(overlap_plots)
 
-        if not num_plots or num_plots < 0:
-            logging.info("No plots intersect file '%s'", one_file)
-            continue
+#        if not num_plots or num_plots < 0:
+#            logging.info("No plots intersect file '%s'", one_file)
+#            continue
+        overlap_plots = [os.path.basename(os.path.dirname(one_file))]
 
         num_files += 1
         image_spatial_ref = get_spatial_reference_from_json(image_bounds)
         for plot_name in overlap_plots:
-            plot_bounds = convert_json_geometry(overlap_plots[plot_name], image_spatial_ref)
-            tuples = geojson_to_tuples_betydb(yaml.safe_load(plot_bounds))
-            centroid = json.loads(centroid_from_geojson(plot_bounds))["coordinates"]
+#            plot_bounds = convert_json_geometry(overlap_plots[plot_name], image_spatial_ref)
+#            tuples = geojson_to_tuples_betydb(yaml.safe_load(plot_bounds))
+            centroid = json.loads(centroid_from_geojson(image_bounds))["coordinates"]
 
             try:
-                logging.debug("Clipping raster to plot")
-                pxarray = clip_raster(one_file, tuples, os.path.join(check_md['working_folder'],
-                                                                     "temp.tif"))
+#                logging.debug("Clipping raster to plot")
+#                pxarray = clip_raster(one_file, tuples, os.path.join(check_md['working_folder'],
+#                                                                     "temp.tif"))
+                raster = gdal.Open(one_file)
+                pxarray = np.array(raster.ReadAsArray())
                 if pxarray is not None:
                     if len(pxarray.shape) < 3:
                         logging.warning("Unexpected image dimensions for file '%s'", one_file)
