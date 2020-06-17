@@ -7,8 +7,8 @@ import logging
 import os
 from typing import Optional
 import numpy as np
-import dateutil.parser
 import yaml
+import dateutil.parser
 from osgeo import ogr
 import osr
 
@@ -199,7 +199,6 @@ def add_parameters(parser: argparse.ArgumentParser) -> None:
                         help="name of the germplasm associated with the canopy cover")
 
 
-# pylint: disable=unused-argument
 def check_continue(transformer: transformer_class.Transformer, check_md: dict,
                    transformer_md: dict, full_md: dict) -> tuple:
     """Checks if conditions are right for continuing processing
@@ -212,6 +211,7 @@ def check_continue(transformer: transformer_class.Transformer, check_md: dict,
         Returns a tuple containing the return code for continuing or not, and
         an error message if there's an error
     """
+    # pylint: disable=unused-argument
     # Check that we have what we need
     if not 'list_files' in check_md:
         return (-1, "Unable to find list of files associated with this request")
@@ -240,6 +240,9 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict,
     Return:
         Returns a dictionary with the results of processing
     """
+    # pylint: disable=unused-argument
+    # Disable checks that would make code harder to read and maintain
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     # Setup local variables
     timestamp = dateutil.parser.parse(check_md['timestamp'])
     datestamp = timestamp.strftime("%Y-%m-%d")
@@ -282,7 +285,7 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict,
     logging.debug("Looking for images with an extension of: %s", ",".join(image_exts))
     for one_file in check_md['list_files']():
         ext = os.path.splitext(one_file)[1]
-        if not ext or not ext in image_exts:
+        if not ext or ext not in image_exts:
             logging.debug("Skipping non-supported file '%s'", one_file)
             continue
 
@@ -310,7 +313,6 @@ def perform_process(transformer: transformer_class.Transformer, check_md: dict,
                 pxarray = clip_raster(one_file, tuples, os.path.join(check_md['working_folder'],
                                                                      "temp.tif"))
                 if pxarray is not None:
-
                     if len(pxarray.shape) < 3:
                         logging.warning("Unexpected image dimensions for file '%s'", one_file)
                         logging.warning("    expected 3 and received %s", str(pxarray.shape))
