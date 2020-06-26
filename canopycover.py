@@ -199,10 +199,10 @@ class CanopyCover(algorithm.Algorithm):
         parser.add_argument('--germplasm_name', dest="germplasmName", type=str, nargs='?',
                             help="name of the germplasm associated with the canopy cover")
 
-    def check_continue(self, transformer: Environment, check_md: dict, transformer_md: list, full_md: list) -> tuple:
+    def check_continue(self, environment: Environment, check_md: dict, transformer_md: list, full_md: list) -> tuple:
         """Checks if conditions are right for continuing processing
         Arguments:
-            transformer: instance of transformer class
+            environment: instance of transformer class
             check_md: dictionary
             transformer_md: dictionary
             full_md: dictionary
