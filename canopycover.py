@@ -225,7 +225,7 @@ class CanopyCover(algorithm.Algorithm):
                 break
 
         # Return the appropriate result
-        return tuple(0) if found_file else (-1, "Unable to find an image file to work with")
+        return (0) if found_file else (-1, "Unable to find an image file to work with")
 
     def perform_process(self, environment: Environment, check_md: dict, transformer_md: dict, full_md: list) -> dict:
         """Performs the processing of the data
