@@ -1,29 +1,36 @@
 """Contains transformer configuration information
 """
+from agpypeline.configuration import Configuration
 
-# The version number of the transformer
-TRANSFORMER_VERSION = '3.0'
 
-# The transformer description
-TRANSFORMER_DESCRIPTION = 'Canopy Cover by Plot (Percentage of Green Pixels)'
+class ConfigurationCanopycover(Configuration):
+    """Configuration information for Canopy Cover Transformer"""
+    # Silence this error until we have public methods
+    # pylint: disable=too-few-public-methods
 
-# Short name of the transformer
-TRANSFORMER_NAME = 'terra.stereo-rgb.canopycover'
+    # The version number of the transformer
+    transformer_version = '3.0'
 
-# The sensor associated with the transformer
-TRANSFORMER_SENSOR = 'stereoTop'
+    # The transformer description
+    transformer_description = 'Canopy Cover by Plot (Percentage of Green Pixels)'
 
-# The transformer type (eg: 'rgbmask', 'plotclipper')
-TRANSFORMER_TYPE = 'canopyCover'
+    # Short name of the transformer
+    transformer_name = 'terra.stereo-rgb.canopycover'
 
-# The name of the author of the extractor
-AUTHOR_NAME = 'Chris Schnaufer'
+    # The sensor associated with the transformer
+    transformer_sensor = 'stereoTop'
 
-# The email of the author of the extractor
-AUTHOR_EMAIL = 'schnaufer@email.arizona.edu'
+    # The transformer type (eg: 'rgbmask', 'plotclipper')
+    transformer_type = 'canopyCover'
 
-# Contributors to this transformer
-CONTRUBUTORS = ["Zongyang Li"]
+    # The name of the author of the extractor
+    author_name = 'Chris Schnaufer'
 
-# Reposity URI of where the source code lives
-REPOSITORY = 'https://github.com/AgPipeline/transformer-canopycover.git'
+    # The email of the author of the extractor
+    author_email = 'schnaufer@email.arizona.edu'
+
+    # Contributors to this transformer
+    CONTRIBUTORS = ["Zongyang Li"]
+
+    # Repository URI of where the source code lives
+    REPOSITORY = 'https://github.com/AgPipeline/transformer-canopycover.git'
