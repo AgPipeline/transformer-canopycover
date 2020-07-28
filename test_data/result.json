@@ -1,0 +1,13 @@
+{
+  "code": 0,
+  "files": [
+    {
+      "path": "/Users/kyclark/work/lebauer/transformer-canopycover/test_data/canopycover_geostreams.csv",
+      "key": "csv"
+    },
+    {
+      "path": "/Users/kyclark/work/lebauer/transformer-canopycover/test_data/canopycover.csv",
+      "key": "csv"
+    }
+  ]
+}

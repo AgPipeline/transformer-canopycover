@@ -16,7 +16,6 @@ from osgeo import gdal, ogr
 
 from configuration import ConfigurationCanopycover
 
-
 # Array of trait names that should have array values associated with them
 TRAIT_NAME_ARRAY_VALUE = ['canopy_cover', 'site']
 
@@ -34,8 +33,10 @@ TRAIT_NAME_MAP = {
 def get_fields() -> list:
     """Returns the supported field names as a list
     """
-    return ['local_datetime', 'canopy_cover', 'access_level', 'species', 'site',
-            'citation_author', 'citation_year', 'citation_title', 'method']
+    return [
+        'local_datetime', 'canopy_cover', 'access_level', 'species', 'site',
+        'citation_author', 'citation_year', 'citation_title', 'method'
+    ]
 
 
 def get_default_trait(trait_name: str) -> Union[str, list]:
@@ -94,7 +95,8 @@ def generate_traits_list(traits: list) -> list:
     return trait_list
 
 
-def setup_default_traits(traits: dict, args: argparse.Namespace, full_md: list) -> dict:
+def setup_default_traits(traits: dict, args: argparse.Namespace,
+                         full_md: list) -> dict:
     """Overrides trait values based upon command line parameters and loaded metadata
     Arguments:
         traits: the current set of traits
@@ -139,7 +141,7 @@ def calculate_canopycover_masked(pxarray: np.ndarray) -> float:
       (float): greenness percentage
     """
     nonzeros = np.count_nonzero(pxarray)
-    ratio = nonzeros/float(pxarray.size)
+    ratio = nonzeros / float(pxarray.size)
     # Scale ratio from 0-1 to 0-100
     ratio *= 100.0
 
@@ -175,7 +177,6 @@ def centroid_as_json(geom: ogr.Geometry) -> str:
 
 class CanopyCover(algorithm.Algorithm):
     """Calculates canopy cover percentage on soil-masked image"""
-
     @property
     def supported_file_ext(self) -> tuple:
         """Returns a tuple of supported file extensions in lowercase (with the preceeding dot: eg '.tif')"""
@@ -187,19 +188,36 @@ class CanopyCover(algorithm.Algorithm):
             parser: instance of argparse
         """
         # pylint: disable=no-self-use
-        parser.add_argument('--citation_author', dest="citationAuthor", type=str, nargs='?',
-                            help="author of citation to use when generating measurements")
+        parser.add_argument(
+            '--citation_author',
+            dest="citationAuthor",
+            type=str,
+            nargs='?',
+            help="author of citation to use when generating measurements")
 
-        parser.add_argument('--citation_title', dest="citationTitle", type=str, nargs='?',
-                            help="title of the citation to use when generating measurements")
+        parser.add_argument(
+            '--citation_title',
+            dest="citationTitle",
+            type=str,
+            nargs='?',
+            help="title of the citation to use when generating measurements")
 
-        parser.add_argument('--citation_year', dest="citationYear", type=str, nargs='?',
-                            help="year of citation to use when generating measurements")
+        parser.add_argument(
+            '--citation_year',
+            dest="citationYear",
+            type=str,
+            nargs='?',
+            help="year of citation to use when generating measurements")
 
-        parser.add_argument('--germplasm_name', dest="germplasmName", type=str, nargs='?',
-                            help="name of the germplasm associated with the canopy cover")
+        parser.add_argument(
+            '--germplasm_name',
+            dest="germplasmName",
+            type=str,
+            nargs='?',
+            help="name of the germplasm associated with the canopy cover")
 
-    def check_continue(self, environment: Environment, check_md: dict, transformer_md: list, full_md: list) -> tuple:
+    def check_continue(self, environment: Environment, check_md: dict,
+                       transformer_md: list, full_md: list) -> tuple:
         """Checks if conditions are right for continuing processing
         Arguments:
             environment: instance of transformer class
@@ -225,9 +243,11 @@ class CanopyCover(algorithm.Algorithm):
                 break
 
         # Return the appropriate result
-        return (0) if found_file else (-1, "Unable to find an image file to work with")
+        return (0) if found_file else (
+            -1, "Unable to find an image file to work with")
 
-    def perform_process(self, environment: Environment, check_md: dict, transformer_md: dict, full_md: list) -> dict:
+    def perform_process(self, environment: Environment, check_md: dict,
+                        transformer_md: dict, full_md: list) -> dict:
         """Performs the processing of the data
         Arguments:
             environment: instance of transformer class
@@ -244,8 +264,10 @@ class CanopyCover(algorithm.Algorithm):
         datestamp = timestamp.strftime("%Y-%m-%d")
         localtime = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
 
-        geo_csv_filename = os.path.join(check_md['working_folder'], "canopycover_geostreams.csv")
-        bety_csv_filename = os.path.join(check_md['working_folder'], "canopycover.csv")
+        geo_csv_filename = os.path.join(check_md['working_folder'],
+                                        "canopycover_geostreams.csv")
+        bety_csv_filename = os.path.join(check_md['working_folder'],
+                                         "canopycover.csv")
         geo_file = open(geo_csv_filename, 'w')
         bety_file = open(bety_csv_filename, 'w')
 
@@ -256,8 +278,10 @@ class CanopyCover(algorithm.Algorithm):
         traits = setup_default_traits(traits, environment.args, full_md)
 
         # Preparing and writing headers
-        geo_csv_header = ','.join(['site', 'trait', 'lat', 'lon', 'dp_time',
-                                   'source', 'value', 'timestamp'])
+        geo_csv_header = ','.join([
+            'site', 'trait', 'lat', 'lon', 'dp_time', 'source', 'value',
+            'timestamp'
+        ])
         bety_csv_header = ','.join(map(str, fields))
         if geo_file:
             geo_file.write(geo_csv_header + "\n")
@@ -268,7 +292,8 @@ class CanopyCover(algorithm.Algorithm):
         image_exts = self.supported_file_ext
         num_files = 0
         total_plots_calculated = 0
-        logging.debug("Looking for images with an extension of: %s", ",".join(image_exts))
+        logging.debug("Looking for images with an extension of: %s",
+                      ",".join(image_exts))
         for one_file in check_md['list_files']():
             ext = os.path.splitext(one_file)[1]
             if not ext or ext not in image_exts:
@@ -277,38 +302,43 @@ class CanopyCover(algorithm.Algorithm):
 
             image_bounds = geoimage.get_image_bounds(one_file)
             if not image_bounds:
-                logging.info("Image file does not appear to be geo-referenced '%s'", one_file)
+                logging.info(
+                    "Image file does not appear to be geo-referenced '%s'",
+                    one_file)
                 continue
 
             overlap_plots = [os.path.basename(os.path.dirname(one_file))]
 
             num_files += 1
             for plot_name in overlap_plots:
-                centroid = json.loads(centroid_as_json(image_bounds))["coordinates"]
+                centroid = json.loads(
+                    centroid_as_json(image_bounds))["coordinates"]
 
                 try:
                     raster = gdal.Open(one_file)
                     pxarray = np.array(raster.ReadAsArray())
                     if pxarray is not None:
                         if len(pxarray.shape) < 3:
-                            logging.warning("Unexpected image dimensions for file '%s'", one_file)
-                            logging.warning("    expected 3 and received %s", str(pxarray.shape))
+                            logging.warning(
+                                "Unexpected image dimensions for file '%s'",
+                                one_file)
+                            logging.warning("    expected 3 and received %s",
+                                            str(pxarray.shape))
                             break
 
                         logging.debug("Calculating canopy cover")
-                        cc_val = calculate_canopycover_masked(np.rollaxis(pxarray, 0, 3))
+                        cc_val = calculate_canopycover_masked(
+                            np.rollaxis(pxarray, 0, 3))
 
                         # Write the datapoint geographically and otherwise
                         logging.debug("Writing to CSV files")
                         if geo_file:
-                            csv_data = ','.join([plot_name,
-                                                 'Canopy Cover',
-                                                 str(centroid[1]),
-                                                 str(centroid[0]),
-                                                 localtime,
-                                                 one_file,
-                                                 str(cc_val),
-                                                 datestamp])
+                            csv_data = ','.join([
+                                plot_name, 'Canopy Cover',
+                                str(centroid[1]),
+                                str(centroid[0]), localtime, one_file,
+                                str(cc_val), datestamp
+                            ])
                             geo_file.write(csv_data + "\n")
 
                         if bety_file:
@@ -324,8 +354,11 @@ class CanopyCover(algorithm.Algorithm):
                     else:
                         continue
                 except Exception as ex:
-                    logging.warning("Exception caught while processing canopy cover: %s", str(ex))
-                    logging.warning("Error generating canopy cover for '%s'", one_file)
+                    logging.warning(
+                        "Exception caught while processing canopy cover: %s",
+                        str(ex))
+                    logging.warning("Error generating canopy cover for '%s'",
+                                    one_file)
                     logging.warning("    plot name: '%s'", plot_name)
                     continue
 
@@ -333,7 +366,10 @@ class CanopyCover(algorithm.Algorithm):
         if not num_files:
             return {'code': -1000, 'error': "No files were processed"}
         if not total_plots_calculated:
-            return {'code': -1001, 'error': "No plots intersected with the images provided"}
+            return {
+                'code': -1001,
+                'error': "No plots intersected with the images provided"
+            }
 
         # Setup the metadata for returning files
         file_md = []
