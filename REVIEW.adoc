@@ -1,0 +1,507 @@
+= Review and testing of canopycover.py
+
+July 28, 2020
+
+In order to run canopycover.py, you will need at least version 0.0.20 of the https://github.com/AgPipeline/agpypeline[AgPipeline] code available which is currently available on the "develop" branch.
+For instance, I have clone this repo and switched to the appropriate branch, then I set `PYTHONPATH` to that directory, e.g.:
+
+----
+$ cd /Users/kyclark/work/lebauer
+$ git clone git@github.com:AgPipeline/agpypeline.git
+$ cd agpypeline
+$ git checkout --track origin/develop
+$ export PYTHONPATH=/Users/kyclark/work/lebauer/agpypeline
+----
+
+== Print usage with insufficient arguments
+
+The program does not print a typical "usage" when run with no arguments.
+Instead, it prints logging-type messages:
+
+----
+$ ./canopycover.py
+ERROR:root:No metadata paths were specified.
+ERROR:root:Stopping processing
+{
+  "error": "No metadata paths were specified.",
+  "code": -1
+}
+WARNING:root:Writing result to a file was requested but a file path wasn't provided.
+----
+
+The problem is that the user isn't told how to fix this problem, for instance, how does one specify the "metadata paths"?
+
+== Declaration of metadata argument
+
+Running with `-h` and `--help` will produce the needed documentation to discover the "metadata" option:
+
+----
+$ ./canopycover.py -h
+usage: canopycover.py [-h] [--debug] [--info] [--result [RESULT]]
+                      [--metadata METADATA] [--working_space WORKING_SPACE]
+                      [--citation_author [CITATIONAUTHOR]]
+                      [--citation_title [CITATIONTITLE]]
+                      [--citation_year [CITATIONYEAR]]
+                      [--germplasm_name [GERMPLASMNAME]]
+                      ...
+
+Canopy Cover by Plot (Percentage of Green Pixels)
+
+positional arguments:
+  file_list             additional files for transformer
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --debug, -d           enable debug logging (default=WARN)
+  --info, -i            enable info logging (default=WARN)
+  --result [RESULT]     Direct the result of a run to one or more of (all is
+                        default): "all,file,print"
+  --metadata METADATA   Path(s) to metadata <1>
+  --working_space WORKING_SPACE
+                        the folder to use use as a workspace and for storing
+                        results
+  --citation_author [CITATIONAUTHOR]
+                        author of citation to use when generating measurements
+  --citation_title [CITATIONTITLE]
+                        title of the citation to use when generating
+                        measurements
+  --citation_year [CITATIONYEAR]
+                        year of citation to use when generating measurements
+  --germplasm_name [GERMPLASMNAME]
+                        name of the germplasm associated with the canopy cover
+
+terra.stereo-rgb.canopycover version 3.0 author Chris Schnaufer
+schnaufer@email.arizona.edu
+----
+
+<1> Here is the `--metadata` option we need.
+
+NOTE: Suggest having both long (e.g., `--metadata`) and short (e.g., `-m`) names for all options.
+
+Let's look at how the metadata option is declared.
+We have to look in the `agpypeline/agpypeline/entrypoint.py` file for this information, not in `canopycover.py` which is confusing to someone new to the code:
+
+----
+parser.add_argument('--metadata',    <1>
+                    type=str,        <2>
+                    action='append', <3>
+                    help='Path(s) to metadata')
+----
+
+<1> Only a long name
+<2> The `type` is a `str`
+<3> The `action` of `append` means that each `--metadata` value will be appended to a `list` of values, but this also makes the argument optional as it is not required to be present.
+
+Having this be `type=str` means the program will try to use invalid input values:
+
+----
+$ ./canopycover.py --metadata blargh
+ERROR:root:Unable to access metadata file 'blargh'
+ERROR:root:Stopping processing
+ERROR:root:Unable to access metadata file 'blargh'
+ERROR:root:Stopping processing
+{
+  "error": "Unable to access metadata file 'blargh'",
+  "code": -3
+}
+WARNING:root:Writing result to a file was requested but a file path wasn't provided.
+WARNING:root:    Skipping writing to a file.
+----
+
+WARNING: The above output describes errors that prevent the program from running to completion and exiting normally; however, the return code from the program is still `0` which indicates no errors. **The program should return a non-zero exit code for all errors.**
+
+I would recommend instead the argument be declared as such:
+
+----
+parser.add_argument('-m',                         <1>
+                    '--metadata',                 <2>
+                    type=argparse.FileType('rt'), <3>
+                    nargs='+',                    <4>
+                    required=True,                <5>
+                    help='Path(s) to metadata')
+----
+
+<1> Short name
+<2> Long name
+<3> The value(s) must be readable text (`'rt'`) file(s)
+<4> The number of arguments must be one or more
+<5> The argument is required
+
+Now the program cannot run with the "metadata" argument:
+
+----
+$ ./canopycover.py
+usage: canopycover.py [-h] [--debug] [--info] [--result [RESULT]] -m METADATA
+                      [METADATA ...] [--working_space WORKING_SPACE]
+                      [--citation_author [CITATIONAUTHOR]]
+                      [--citation_title [CITATIONTITLE]]
+                      [--citation_year [CITATIONYEAR]]
+                      [--germplasm_name [GERMPLASMNAME]]
+                      ...
+canopycover.py: error: the following arguments are required: -m/--metadata
+----
+
+Nor will the program run with invalid values:
+
+----
+$ ./canopycover.py -m blargh
+usage: canopycover.py [-h] [--debug] [--info] [--result [RESULT]] -m METADATA
+                      [METADATA ...] [--working_space WORKING_SPACE]
+                      [--citation_author [CITATIONAUTHOR]]
+                      [--citation_title [CITATIONTITLE]]
+                      [--citation_year [CITATIONYEAR]]
+                      [--germplasm_name [GERMPLASMNAME]]
+                      ...
+canopycover.py: error: argument -m/--metadata: can't open 'blargh': \
+[Errno 2] No such file or directory: 'blargh'
+----
+
+NOTE: Both incantations above will cause the program to exit with a non-zero exit code to indicate failure. This along with the usage and error messages are handled automatically by `argparse` entirely because of how the parameter was described so no action is required by the programmer.
+
+NOTE: This would change the code that uses the "metadata" arguments because, in addition to validating that the input is a readable text file, `argparse` will open the file(s) and provide open file handles for the value.
+
+== Providing test inputs
+
+The current repository lacks example input files.
+I have added a "test_data" directory with images and a sample metadata file ("meta.yaml").
+
+== Requiring input files
+
+Attempting to run the program with only a `--metadata` argument still proves to be insufficient:
+
+----
+$ ./canopycover.py --metadata test_data/meta.yaml
+{
+  "code": -1,
+  "message": "Unable to find an image file to work with",
+  "error": "Unknown error returned from check_continue call"
+}
+WARNING:root:Writing result to a file was requested but a file path wasn't provided.
+WARNING:root:    Skipping writing to a file.
+----
+
+Again, this is error output, but the program returns an exit code of `0` which does not indicate failure.
+
+As we can see from the "usage" above, the "file_list" of input images is declared as a "positional" argument.
+Often these would be required for the program to run, so let's inspect how the argument was declared.
+Again, we have to look in `agpypeline/agpypeline/entrypoint.py` for this, not in `canopycover.py`:
+
+----
+parser.add_argument('file_list',
+                    nargs=argparse.REMAINDER,
+                    help='additional files for transformer')
+----
+
+The `argparse.REMAINDER` is a `str` value of `'...'`, so using this as the argument to `nargs` makes this argument optional.
+For instance, here is how a I could write a simple program that requires _one or more_ positional argument:
+
+----
+import argparse
+
+parser = argparse.ArgumentParser(description='nargs')
+parser.add_argument(
+    'positional',
+    metavar='str',
+    nargs='+', <1>
+    help='A positional argument')
+
+args = parser.parse_args()
+print(args.positional)
+----
+
+<1> This makes the program require one or more values.
+
+If I run this, I must provide a positional argument:
+
+----
+$ ./foo.py
+usage: foo.py [-h] str [str ...]
+foo.py: error: the following arguments are required: str
+----
+
+If I change the above program like so:
+
+----
+import argparse
+
+parser = argparse.ArgumentParser(description='nargs')
+parser.add_argument(
+    'positional',
+    metavar='str',
+    nargs=argparse.REMAINDER, <1>
+    help='A positional argument')
+
+args = parser.parse_args()
+print(args.positional)
+----
+
+<1> `argparse.REMAINDER` is the string `'...'` which does not indicate that values must be supplied.
+
+Now the program will run with no arguments and so will print an empty list:
+
+----
+$ ./foo.py
+[]
+----
+
+If input files are required for the program to run, I would recommend the parameter be declared like so:
+
+----
+parser.add_argument('file_list',
+                    nargs='+', <1>
+                    type=argparse.FileType('r'), <2>
+                    help='additional files for transformer')
+----
+
+<1> `+` means "one or more"; other values include `*` for "zero or more" and `?` for "zero or one."
+<2> Since these are input _files_, let `argparse` validate. See notes below.
+
+With this change, the program will produce the following usage and error message and will return a non-zero exit code:
+
+----
+$ ./canopycover.py --metadata test_data/meta.yaml
+usage: canopycover.py [-h] [--debug] [--info] [--result [RESULT]]
+                      [--metadata METADATA] [--working_space WORKING_SPACE]
+                      [--citation_author [CITATIONAUTHOR]]
+                      [--citation_title [CITATIONTITLE]]
+                      [--citation_year [CITATIONYEAR]]
+                      [--germplasm_name [GERMPLASMNAME]]
+                      file_list [file_list ...]
+canopycover.py: error: the following arguments are required: file_list
+----
+
+NOTE: WRT #2 callout above, if you don't want to deal with open file handles, you can call the `fh.close()` method on the values and use the `fh.name` value to get access to the file's path. 
+
+Alternately, leave out the `type` and add a manual check.
+You can use `parser.error()` to generate a helpful message and exit the program with a non-zero value:
+
+----
+args = parser.parse_args()
+
+if bad := list(filter(lambda f: not os.path.isfile(f), args.file_list)):
+    parser.error(f'Invalid files: {", ".join(bad)}')
+----
+
+Here is what that code looks like:
+
+----
+$ ./canopycover.py --metadata test_data/meta.yaml foo bar
+usage: canopycover.py [-h] [--debug] [--info] [--result [RESULT]]
+                      [--metadata METADATA] [--working_space WORKING_SPACE]
+                      [--citation_author [CITATIONAUTHOR]]
+                      [--citation_title [CITATIONTITLE]]
+                      [--citation_year [CITATIONYEAR]]
+                      [--germplasm_name [GERMPLASMNAME]]
+                      ...
+canopycover.py: error: Invalid files: foo, bar
+----
+
+The ultimate point is to validate both the _number_, _type_, and _validity_ of each argument and to provide useful feedback to the user as to how to fix the problems.
+It's also crucial that programs correctly report their exit codes, and this program fails to return non-zero values upon failure.
+The `argparse` interface provides many ways to handle these "boundary" problems (e.g., getting data/configuration into your program from outside).
+Many problems I see in this codebase could be handled simply and efficiently by leaning on `argparse` more heavily.
+
+== Requiring "working_space" argument
+
+So far, brute force has revealed that the program requires both a `--metadata` (required) option and an position input file, so we can try to run with those:
+
+----
+$ ./canopycover.py --metadata test_data/meta.yaml test_data/rgb_17_7_W.tif
+Traceback (most recent call last):
+  File "./canopycover.py", line 394, in <module>
+    entrypoint.entrypoint(CONFIGURATION, CanopyCover())
+  File "/Users/kyclark/work/lebauer/agpypeline/agpypeline/entrypoint.py", line 510, in entrypoint
+    do_work(parser, configuration_info, algorithm_instance)
+  File "/Users/kyclark/work/lebauer/agpypeline/agpypeline/entrypoint.py", line 486, in do_work
+    result = __internal__.perform_processing(transformer_instance,
+  File "/Users/kyclark/work/lebauer/agpypeline/agpypeline/entrypoint.py", line 334, in perform_processing
+    result = algorithm_instance.perform_process(
+  File "./canopycover.py", line 267, in perform_process
+    geo_csv_filename = os.path.join(check_md['working_folder'],
+  File "/Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/posixpath.py", line 76, in join <1>
+    a = os.fspath(a)
+TypeError: expected str, bytes or os.PathLike object, not NoneType
+----
+
+<1> This call to `os.path.join()` is the source of the error.
+
+Following on earlier discussions with David and Chris, this is an example of an uncaught exception.
+It at least provides a traceback so that we can identify the line of the `canopycover.py` where the code failed:
+
+----
+geo_csv_filename = os.path.join(check_md['working_folder'],
+                                "canopycover_geostreams.csv")
+----
+
+**The problem is that the exception in no way gives any indication as to why this code failed.**
+We have to manually dig into the code to figure that out.
+
+This code exists in the `canopycover.perform_process()` function which is declared like so:
+
+----
+def perform_process(self, environment: Environment, check_md: dict,
+                    transformer_md: dict, full_md: list) -> dict:
+----
+
+And is called by the `entrypoint.py` which calls it like so:
+
+----
+result = algorithm_instance.perform_process(
+                    environment=environment_instance, **transformer_params)
+----
+
+The `perform_process` expected the `check_md` dictionary to contain a "working_folder" value.
+I can print the structure of this dictionary for the above run:
+
+----
+{'container_name': None,
+ 'context_md': None,
+ 'experiment': 'S7_20181011',
+ 'list_files': <function Environment.get_transformer_params.<locals>.<lambda> at 0x7ffb5146fca0>,
+ 'season': 'S7_20181011',
+ 'target_container_name': None,
+ 'timestamp': '2018-10-11T13:01:02-08:00',
+ 'trigger_name': None,
+ 'working_folder': None}
+----
+
+NOTE: In general, accessing keys of dictionaries directly using `dict['key']` should be avoided due to the fact that this will generate a "KeyError" exception; better to use the `dict.get()` method, e.g., `check_md.get('working_folder')`.
+
+We see that the `check_md` dict does contain a "working_folder", but the value is `None` which will generate an exception when used with `os.path.join()`:
+
+----
+>>> import os
+>>> os.path.join(None, 'foo')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/posixpath.py", line 76, in join
+    a = os.fspath(a)
+TypeError: expected str, bytes or os.PathLike object, not NoneType
+----
+
+The root of this problem lies in a couple of places.
+First, the `agpypeline/agpypeline/entrypoint.py` declared the parameter like so:
+
+----
+parser.add_argument(
+    '--working_space',
+    type=str,
+    help='the folder to use use as a workspace and for storing results')
+----
+
+If the parameter is optional, it should have a `default` value.
+I would recommend it be declared like so:
+
+----
+parser.add_argument(
+    '-w',              <1>
+    '--working_space', <2>
+    type=str,
+    default='output',  <3>
+    help='the folder to use use as a workspace and for storing results')
+----
+
+<1> Short name
+<2> Long name
+<3> Default value
+
+And then this directory should be created if it does not exist:
+
+----
+args = parser.parse_args()
+
+if not os.path.isdir(args.working_space):
+    os.makedirs(args.working_space)
+----
+
+The other problem is in how this value is used in `agpypeline/agpypeline/environment.py` where the `check_md` dictionary is declared:
+
+----
+check_md = {'timestamp': timestamp,
+            'season': season_name,
+            'experiment': experiment_name,
+            'container_name': None,
+            'target_container_name': None,
+            'trigger_name': None,
+            'context_md': None,
+            'working_folder': args.working_space,
+            'list_files': lambda: file_list
+            }
+----
+
+This code could have been another opportunity to check the value of `args.working_space` by using a `NamedTuple` data structure rather than `dict`.
+For instance, you could define a class to describe the fields and data types:
+
+----
+from typing import NamedTuple, List, TextIO, Optional
+
+
+class CheckMD(NamedTuple):
+    timestamp: str
+    season: str
+    experiment: str
+    container_name: Optional[str]
+    target_container_name: Optional[str]
+    trigger_name: Optional[str]
+    context_md: Optional[str]
+    working_folder: str
+    list_files: List[TextIO]
+----
+
+Then the signature of the function changes:
+
+----
+def perform_process(self, environment: Environment, check_md: CheckMD,
+                    transformer_md: dict, full_md: list) -> dict:
+----
+
+And now `mypy` can check that the code is accessing the correct field names and using them with the correct type information.
+
+Moving on, I will try to indicate an "output" directory:
+
+----
+$ ./canopycover.py --metadata test_data/meta.yaml test_data/rgb_17_7_W.tif --working_space output
+Traceback (most recent call last):
+  File "./canopycover.py", line 394, in <module>
+    entrypoint.entrypoint(CONFIGURATION, CanopyCover())
+  File "/Users/kyclark/work/lebauer/agpypeline/agpypeline/entrypoint.py", line 521, in entrypoint
+    do_work(parser, configuration_info, algorithm_instance)
+  File "/Users/kyclark/work/lebauer/agpypeline/agpypeline/entrypoint.py", line 497, in do_work
+    result = __internal__.perform_processing(transformer_instance,
+  File "/Users/kyclark/work/lebauer/agpypeline/agpypeline/entrypoint.py", line 334, in perform_processing
+    result = algorithm_instance.perform_process(
+  File "./canopycover.py", line 271, in perform_process
+    geo_file = open(geo_csv_filename, 'w') <1>
+FileNotFoundError: [Errno 2] No such file or directory: 'output/canopycover_geostreams.csv'
+----
+
+<1> The `open()` fails because the "output" directory does not exist. Python cannot open a file path that does/can not exist.
+
+This is the same uncaught exception as before.
+Again we know _where_ the problem occurs but not _why_.
+We got past the `os.path.join()` function but died on the `open()`.
+A user would need to understand that the "output" directory needs to be created before running the program:
+
+----
+$ mkdir output
+$ ./canopycover.py --metadata test_data/meta.yaml test_data/rgb_17_7_W.tif --working_space output
+{
+  "code": 0,
+  "files": [
+    {
+      "path": "output/canopycover_geostreams.csv",
+      "key": "csv"
+    },
+    {
+      "path": "output/canopycover.csv",
+      "key": "csv"
+    }
+  ]
+}
+----
+
+This seems an unreasonable requirement when the code to create the directory is two lines (see above).
+
+== Author
+
+Ken Youens-Clark <kyclark@arizona.edu>
