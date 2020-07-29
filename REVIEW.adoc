@@ -129,7 +129,7 @@ parser.add_argument('-m',                         <1>
 <4> The number of arguments must be one or more
 <5> The argument is required
 
-Now the program cannot run with the "metadata" argument:
+Now the program cannot run without the "metadata" argument:
 
 ----
 $ ./canopycover.py
