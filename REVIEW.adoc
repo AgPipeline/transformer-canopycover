@@ -30,6 +30,8 @@ WARNING:root:Writing result to a file was requested but a file path wasn't provi
 ----
 
 The problem is that the user isn't told how to fix this problem, for instance, how does one specify the "metadata paths"?
+Also, the exit code from this is `0` which would indicate the program ran successfully to completion which is incorrect.
+The program should return _any value other than 0_.
 
 == Declaration of metadata argument
 

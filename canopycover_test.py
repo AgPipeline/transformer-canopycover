@@ -71,7 +71,6 @@ def test_good_input():
     """
 
     out_dir = random_string()
-    print('out_dir', out_dir)
 
     # This ought not be necessary as the program *should*
     # create it; for now, we'll create the output dir.
