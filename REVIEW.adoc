@@ -298,7 +298,7 @@ usage: canopycover.py [-h] [--debug] [--info] [--result [RESULT]]
 canopycover.py: error: Invalid files: foo, bar
 ----
 
-The ultimate point is to validate both the _number_, _type_, and _validity_ of each argument and to provide useful feedback to the user as to how to fix the problems.
+The ultimate point is to validate the _number_, _type_, and _validity_ of each argument and to provide useful feedback to the user as to how to fix the problems.
 It's also crucial that programs correctly report their exit codes, and this program fails to return non-zero values upon failure.
 The `argparse` interface provides many ways to handle these "boundary" problems (e.g., getting data/configuration into your program from outside).
 Many problems I see in this codebase could be handled simply and efficiently by leaning on `argparse` more heavily.
