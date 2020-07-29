@@ -4,6 +4,7 @@ Purpose: Tests for canopycover.py
 Author : Ken Youens-Clark <kyclark@arizona.edu>
 """
 
+import csv
 import os
 import re
 import random
@@ -49,18 +50,18 @@ def test_no_args():
 
     rv, out = getstatusoutput(prg)
     assert rv == 0  # This seems like a problem!
-    assert re.match('No metadata paths were specified', out)
+    assert re.search('No metadata paths were specified', out)
 
 
 # --------------------------------------------------
-def test_file_input():
+def test_no_metadata():
     """
-    Run with a file
+    Run with a file but no metadata
     """
 
     rv, out = getstatusoutput(f'{prg} {input1}')
     assert rv == 0  # This seems like a problem!
-    assert re.match("a file path wasn't provided", out)
+    assert re.search('No metadata paths were specified', out)
 
 
 # --------------------------------------------------
@@ -70,24 +71,57 @@ def test_good_input():
     """
 
     out_dir = random_string()
+    print('out_dir', out_dir)
 
     # This ought not be necessary as the program *should*
     # create it; for now, we'll create the output dir.
     os.makedirs(out_dir)
 
     try:
-        rv, out = getstatusoutput(f'{prg} --metadata {meta} {input1}')
+        cmd = f'{prg} --working_space {out_dir} --metadata {meta} {input1}'
+        rv, out = getstatusoutput(cmd)
         assert rv == 0
-        result = json.loads(out)
-        assert 'files' in result
 
+        results = os.path.join(out_dir, 'result.json')
+        assert os.path.isfile(results)
+
+        result = json.load(open(results))
+        assert 'files' in result
         out_files = [f['path'] for f in result['files']]
-        geostreams = 'output/canopycover_geostreams.csv'
-        canopycover = 'output/canopycover.csv'
+
+        geostreams = f'{out_dir}/canopycover_geostreams.csv'
+        canopycover = f'{out_dir}/canopycover.csv'
         assert geostreams in out_files
         assert canopycover in out_files
+
         assert os.path.isfile(geostreams)
         assert os.path.isfile(canopycover)
+
+        geo = csv.DictReader(open(geostreams))
+        geo_flds = [
+            'site', 'trait', 'lat', 'lon', 'dp_time', 'source', 'value',
+            'timestamp'
+        ]
+        assert geo.fieldnames == geo_flds
+
+        geo_data = list(geo)
+        assert len(geo_data) == 1
+
+        assert geo_data[0]['lat'] == '3660045.559613465'
+
+        canopy = csv.DictReader(open(canopycover))
+        canopy_flds = [
+            'local_datetime', 'canopy_cover', 'access_level', 'species',
+            'site', 'citation_author', 'citation_year', 'citation_title',
+            'method'
+        ]
+        assert canopy.fieldnames == canopy_flds
+
+        canopy_data = list(canopy)
+        assert len(canopy_data) == 1
+
+        assert canopy_data[0]['canopy_cover'] == '98.59285714285714'
+
     finally:
         if os.path.isdir(out_dir):
             rmtree(out_dir)

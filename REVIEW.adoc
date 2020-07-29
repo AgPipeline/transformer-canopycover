@@ -502,6 +502,35 @@ $ ./canopycover.py --metadata test_data/meta.yaml test_data/rgb_17_7_W.tif --wor
 
 This seems an unreasonable requirement when the code to create the directory is two lines (see above).
 
+== Testing
+
+I have added a `canopycover_test.py` integration test:
+
+----
+$ pytest -v
+============================= test session starts ==============================
+...
+collected 5 items
+
+canopycover_test.py::test_exists PASSED                                  [ 20%]
+canopycover_test.py::test_usage PASSED                                   [ 40%]
+canopycover_test.py::test_no_args PASSED                                 [ 60%]
+canopycover_test.py::test_no_metadata PASSED                             [ 80%]
+canopycover_test.py::test_good_input PASSED                              [100%]
+
+============================== 5 passed in 1.28s ===============================
+----
+
+The tests take into account various problems with the current program such as failing to return a non-zero exit code on failures, having to create an output directory, etc.
+My tests are limited to the amount of code I was able to review and test in a single day.
+Given the complexity of the program, there is much left to test.
+
+For example, I often try to write all the tests that could break a program _before_ writing the tests with valid arguments such as providing non-existent files or data in the wrong format (e.g., JSON when the file extension is ".yaml" or unparsable JSON/YAML), string values where numbers are expected, no arguments where they are required, the wrong number of arguments.
+As noted above, many of these types of problems can be handled by judicious use of `argparse`.
+
+After a program correctly rejects invalid arguments, I think proceed to write the "happy path" tests.
+There are many tests that would be obviated by taking the suggested changes to the code and using stronger typing (e.g., declaring a `class` as demonstrated derived from `NamedTuple`) with tools such as `mypy`.
+
 == Author
 
 Ken Youens-Clark <kyclark@arizona.edu>
