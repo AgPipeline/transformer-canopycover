@@ -137,29 +137,24 @@ def calculate_canopycover_masked(pxarray: np.ndarray) -> float:
       pxarray (numpy array): rgba image where alpha 255=data and alpha 0=NoData
     Returns:
       (float): greenness percentage
+    Notes:
+        From TERRA REF canopy cover: https://github.com/terraref/extractors-stereo-rgb/tree/master/canopycover
     """
-    nonzeros = np.count_nonzero(pxarray)
-    ratio = nonzeros/float(pxarray.size)
+    # If > 75% is NoData, return a -1 ccvalue for omission later
+    total_size = pxarray.shape[0] * pxarray.shape[1]
+    nodata = np.count_nonzero(pxarray[:, :, 3] == 0)
+    nodata_ratio = nodata/float(total_size)
+    if nodata_ratio > 0.75:
+        return -1
+
+    # For masked images, all pixels with rgb>0,0,0 are considered canopy
+    data = pxarray[pxarray[:, :, 3] == 255]
+    canopy = len(data[np.sum(data[:, 0:3], 1) > 0])
+    ratio = canopy/float(total_size - nodata)
     # Scale ratio from 0-1 to 0-100
     ratio *= 100.0
 
     return ratio
-
-    # # If > 75% is NoData, return a -1 ccvalue for omission later
-    # total_size = pxarray.shape[0] * pxarray.shape[1]
-    # nodata = np.count_nonzero(pxarray[:, :, 3] == 0)
-    # nodata_ratio = nodata / float(total_size)
-    # if nodata_ratio > 0.75:
-    #     return -1
-    #
-    # # For masked images, all pixels with rgb>0,0,0 are considered canopy
-    # data = pxarray[pxarray[:, :, 3] == 255]
-    # canopy = len(data[np.sum(data[:, 0:3], 1) > 0])
-    # ratio = canopy / float(total_size - nodata)
-    # # Scale ratio from 0-1 to 0-100
-    # ratio *= 100.0
-    #
-    # return ratio
 
 
 def centroid_as_json(geom: ogr.Geometry) -> str:
@@ -291,12 +286,21 @@ class CanopyCover(algorithm.Algorithm):
                     pxarray = np.array(raster.ReadAsArray())
                     if pxarray is not None:
                         if len(pxarray.shape) < 3:
-                            logging.warning("Unexpected image dimensions for file '%s'", one_file)
-                            logging.warning("    expected 3 and received %s", str(pxarray.shape))
+                            logging.warning('Unexpected image dimensions for file "%s"', one_file)
+                            logging.warning('    expected 3 and received %s', str(pxarray.shape))
                             break
 
+                        # Check if there's an Alpha channel and add it if not
+                        if len(pxarray.shape) >= 4:
+                            image_to_use = pxarray
+                        else:
+                            logging.info('Adding missing alpha channel to loaded image from "%s"', one_file)
+                            mask = np.where(np.sum(pxarray, axis=0) == 0, 0, 255).astype(pxarray.dtype)
+                            image_to_use = np.stack((pxarray[0], pxarray[1], pxarray[2], mask))
+                            del pxarray     # Potentially free up memory
+
                         logging.debug("Calculating canopy cover")
-                        cc_val = calculate_canopycover_masked(np.rollaxis(pxarray, 0, 3))
+                        cc_val = calculate_canopycover_masked(np.rollaxis(image_to_use, 0, 3))
 
                         # Write the datapoint geographically and otherwise
                         logging.debug("Writing to CSV files")
