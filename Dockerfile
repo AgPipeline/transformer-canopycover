@@ -1,4 +1,4 @@
-FROM FROM agdrone/drone-base-image:1.2
+FROM agdrone/agpypeline:1.0
 LABEL maintainer="Chris Schnaufer <schnaufer@email.arizona.edu>"
 
 COPY requirements.txt packages.txt /home/extractor/
@@ -26,6 +26,10 @@ RUN [ -s /home/extractor/requirements.txt ] && \
     rm /home/extractor/requirements.txt)
 
 USER extractor
+COPY configuration.py canopycover.py /home/extractor/
 
-COPY *.py /home/extractor/
-WORKDIR /home/extractor
+USER root
+RUN chmod a+x /home/extractor/canopycover.py
+
+USER extractor
+ENTRYPOINT ["/home/extractor/canopycover.py"]
