@@ -1,0 +1,2 @@
+site,trait,lat,lon,dp_time,source,value,timestamp
+sample_plot_images,Canopy Cover,3659973.902729396,408991.9500000019,2020-08-05T20:39:00,/mnt/sample_plot_images/rgb_1_2_E.tif,100.0,2020-08-05
