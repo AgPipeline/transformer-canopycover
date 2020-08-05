@@ -13,9 +13,9 @@ import json
 from subprocess import getstatusoutput
 from shutil import rmtree
 
-prg = './canopycover.py'
-meta = './test_data/meta.yaml'
-input1 = './test_data/rgb_17_7_W.tif'
+PRG = './canopycover.py'
+META = './test_data/meta.yaml'
+INPUT1 = './test_data/rgb_17_7_W.tif'
 
 
 # --------------------------------------------------
@@ -24,7 +24,7 @@ def test_exists():
     Program exists
     """
 
-    assert os.path.isfile(prg)
+    assert os.path.isfile(PRG)
 
 
 # --------------------------------------------------
@@ -34,8 +34,8 @@ def test_usage():
     """
 
     for flag in ['-h', '--help']:
-        rv, out = getstatusoutput(f'{prg} {flag}')
-        assert rv == 0
+        ret_val, out = getstatusoutput(f'{PRG} {flag}')
+        assert ret_val == 0
         assert re.match("usage", out, re.IGNORECASE)
 
 
@@ -48,8 +48,8 @@ def test_no_args():
     changed to some non-zero value to indicate a failure.
     """
 
-    rv, out = getstatusoutput(prg)
-    assert rv == 0  # This seems like a problem!
+    ret_val, out = getstatusoutput(PRG)
+    assert ret_val == 0  # This seems like a problem!
     assert re.search('No metadata paths were specified', out)
 
 
@@ -59,8 +59,8 @@ def test_no_metadata():
     Run with a file but no metadata
     """
 
-    rv, out = getstatusoutput(f'{prg} {input1}')
-    assert rv == 0  # This seems like a problem!
+    ret_val, out = getstatusoutput(f'{PRG} {INPUT1}')
+    assert ret_val == 0  # This seems like a problem!
     assert re.search('No metadata paths were specified', out)
 
 
@@ -77,9 +77,9 @@ def test_good_input():
     os.makedirs(out_dir)
 
     try:
-        cmd = f'{prg} --working_space {out_dir} --metadata {meta} {input1}'
-        rv, out = getstatusoutput(cmd)
-        assert rv == 0
+        cmd = f'{PRG} --working_space {out_dir} --metadata {META} {INPUT1}'
+        ret_val, _ = getstatusoutput(cmd)
+        assert ret_val == 0
 
         results = os.path.join(out_dir, 'result.json')
         assert os.path.isfile(results)
@@ -119,7 +119,7 @@ def test_good_input():
         canopy_data = list(canopy)
         assert len(canopy_data) == 1
 
-        assert canopy_data[0]['canopy_cover'] == '98.59285714285714'
+        assert canopy_data[0]['canopy_cover'] == '99.75714285714285'
 
     finally:
         if os.path.isdir(out_dir):
