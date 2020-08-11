@@ -222,8 +222,7 @@ class CanopyCover(algorithm.Algorithm):
         # Return the appropriate result
         if found_file:
             return (0,)
-        else:
-            raise FileNotFoundError("Unable to find an image file to work with")
+        raise FileNotFoundError("Unable to find an image file to work with")
 
     def perform_process(self, environment: Environment, check_md: dict, transformer_md: dict, full_md: list) -> dict:
         """Performs the processing of the data
