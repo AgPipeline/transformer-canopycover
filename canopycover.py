@@ -173,7 +173,7 @@ class CanopyCover(algorithm.Algorithm):
 
     @property
     def supported_file_ext(self) -> tuple:
-        """Returns a tuple of supported file extensions in lowercase (with the preceeding dot: eg '.tif')"""
+        """Returns a tuple of supported file extensions in lowercase (with the preceding dot: eg '.tif')"""
         return '.tiff', '.tif'
 
     def add_parameters(self, parser: argparse.ArgumentParser) -> None:
