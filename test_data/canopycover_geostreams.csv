@@ -1,0 +1,2 @@
+site,trait,lat,lon,dp_time,source,value,timestamp
+test_data,Canopy Cover,3660045.559613465,408999.47000000044,2018-10-11T13:01:02,/Users/kyclark/work/lebauer/transformer-canopycover/test_data/rgb_17_7_W.tif,98.59285714285714,2018-10-11
