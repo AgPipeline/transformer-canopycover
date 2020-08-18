@@ -173,7 +173,7 @@ class CanopyCover(algorithm.Algorithm):
 
     @property
     def supported_file_ext(self) -> tuple:
-        """Returns a tuple of supported file extensions in lowercase (with the preceeding dot: eg '.tif')"""
+        """Returns a tuple of supported file extensions in lowercase (with the preceding dot: eg '.tif')"""
         return '.tiff', '.tif'
 
     def add_parameters(self, parser: argparse.ArgumentParser) -> None:
@@ -220,7 +220,9 @@ class CanopyCover(algorithm.Algorithm):
                 break
 
         # Return the appropriate result
-        return (0) if found_file else (-1, "Unable to find an image file to work with")
+        if found_file:
+            return (0,)
+        raise FileNotFoundError("Unable to find an image file to work with")
 
     def perform_process(self, environment: Environment, check_md: dict, transformer_md: dict, full_md: list) -> dict:
         """Performs the processing of the data
