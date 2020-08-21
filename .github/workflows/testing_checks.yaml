@@ -63,7 +63,7 @@ jobs:
         run: 'python3 -m pip install --upgrade --no-cache-dir numpy wheel'
       - name: Install Python pygdal
         shell: bash
-        run: 'sudo python3 -m pip install --no-cache-dir pygdal==2.2.3.5'
+        run: 'python3 -m pip install --no-cache-dir pygdal==2.2.3.5'
       - name: Install system requirements from source
         shell: bash
         run: '[ -s "packages.txt" ] && (cat packages.txt | sudo xargs apt-get install -y --no-install-recommends) || (echo "Failed to install additional packages" && exit 1)'
