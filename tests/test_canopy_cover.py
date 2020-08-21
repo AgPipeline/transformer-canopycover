@@ -4,11 +4,15 @@ Purpose : Tests canopycover.py
 Author : Ken Youens-Clark <kyclark@arizona.edu>
          Chris Schnaufer <schnaufer@arizona.edu>
 """
-import os
-import re
+import csv
 import json
+import os
+import random
+import re
+import string
+from shutil import rmtree
 from subprocess import getstatusoutput
-import pytest
+#import pytest
 
 # The name of the source file to test and it's path
 SOURCE_FILE = 'canopycover.py'
@@ -67,7 +71,7 @@ def test_get_fields():
 
     field_list = cc.get_fields()
     assert len(field_list) > 0
-    assert type(field_list) == list
+    assert isinstance(field_list, list)
 
 
 def test_fail_get_default_trait():
@@ -76,7 +80,7 @@ def test_fail_get_default_trait():
     import canopycover as cc
 
     def_trait = cc.get_default_trait('not a valid field')
-    assert type(def_trait) == str
+    assert isinstance(def_trait, str)
     assert len(def_trait) == 0
 
 
@@ -88,12 +92,12 @@ def test_get_default_trait():
     # Check that we get an empty list back
     for one_field in cc.TRAIT_NAME_ARRAY_VALUE:
         def_trait = cc.get_default_trait(one_field)
-        assert type(def_trait) == list
+        assert isinstance(def_trait, list)
         assert len(def_trait) == 0
 
     for one_field in cc.TRAIT_NAME_MAP:
         def_trait = cc.get_default_trait(one_field)
-        assert type(def_trait) == str
+        assert isinstance(def_trait, str)
         assert len(def_trait) > 0
 
 
@@ -103,10 +107,10 @@ def test_get_traits_table():
     import canopycover as cc
 
     trait_table = cc.get_traits_table()
-    assert type(trait_table) == list
+    assert isinstance(trait_table, list)
     assert len(trait_table) == 2
-    assert type(trait_table[0]) == list
-    assert type(trait_table[1]) == dict
+    assert isinstance(trait_table[0], list)
+    assert isinstance(trait_table[1], dict)
     assert len(trait_table[0]) > 0
     assert len(trait_table[1].keys()) > 0
     assert len(trait_table[0]) == len(trait_table[1].keys())
@@ -126,6 +130,8 @@ def test_generate_traits_list():
         test_data = json.load(in_file)
         for test in test_data:
             trait_list = cc.generate_traits_list(test)
+            # Disable following check since we need the index value
+            # pylint: disable=consider-using-enumerate
             for idx in range(0, len(fields)):
                 if fields[idx] in test:
                     assert trait_list[idx] == test[fields[idx]]
@@ -142,7 +148,7 @@ def test_good_input():
     os.makedirs(out_dir)
 
     try:
-        cmd = f'{PRG} --working_space {out_dir} --metadata {META} {INPUT1}'
+        cmd = f'{SOURCE_PATH} --working_space {out_dir} --metadata {META} {INPUT1}'
         ret_val, _ = getstatusoutput(cmd)
         assert ret_val == 0
 
