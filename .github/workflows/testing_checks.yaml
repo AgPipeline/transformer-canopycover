@@ -75,7 +75,7 @@ jobs:
         run: 'if [ -s ".github/workflows/action_pylint.sh" ]; then (chmod +x ".github/workflows/action_pylint.sh" && ./.github/workflows/action_pylint.sh) || (echo "Error running shell script" && exit 1); fi'
       - name: Fetching pylint.rc file
         run: wget https://raw.githubusercontent.com/AgPipeline/Organization-info/master/pylint.rc
-        if: ${{ matrix.name }} == "pylint"
+        if: ${{ matrix.app }} == "pylint"
       - name: Set execution permission for testing
         run: chmod +x canopycover.py
       - name: Listing
