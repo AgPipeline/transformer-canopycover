@@ -25,7 +25,7 @@ jobs:
               test_command: cat action_test_files.txt | xargs python3 -m pylint --rcfile ./pylint.rc
             - app: pytest
               pip_installs: pytest pytest-cov
-              test_command: python3 -m pytest --cov=. -rpP > coverage.txt
+              test_command: python3 -m pytest --cov=. -rpP --cov-report=xml > coverage.txt
               artifacts: coverage.txt
     steps:
       - name: Current python version
@@ -90,3 +90,6 @@ jobs:
           name: testing_artifacts
           path: ${{ matrix.artifacts }}
         if: ${{ matrix.artifacts }}
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        if: ${{ matrix.app == 'pytest' }}
