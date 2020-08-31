@@ -1,0 +1,2 @@
+local_datetime,canopy_cover,access_level,species,site,citation_author,citation_year,citation_title,method
+2018-10-11T13:01:02,98.59285714285714,2,Sorghum bicolor,test_data,"Zongyang, Li",2018,Maricopa Field Station Data and Metadata,Green Canopy Cover Estimation from Field Scanner RGB images
