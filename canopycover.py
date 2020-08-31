@@ -73,11 +73,11 @@ def get_traits_table() -> list:
     return [fields, traits]
 
 
-def generate_traits_list(traits: list) -> list:
+def generate_traits_list(traits: dict) -> list:
     """Returns an array of trait values
 
     Args:
-        traits(dict): contains the set of trait values to return
+        traits: contains the set of trait values to return
 
     Return:
         Returns an array of trait values taken from the traits parameter

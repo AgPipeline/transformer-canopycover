@@ -64,7 +64,7 @@ Note that the paths provided are relative to the running image (see the --mount 
 - `--citation_year "<year>"` the year of the citation to store in the resulting CSV file(s)
 - `"/mnt/rgb_mask_L2_my-site_2018-10-01__14-20-40_mask.tif"` the names of one or more image files to use when calculating plot-level canopy cover
 
-**Testing the Transformer** \
+**Testing the Docker Transformer** \
 In order to make sure that the canopy cover transformer is functioning correctly, create an image that is all black
 using an image editor such as [gimp](https://www.gimp.org) and export the result to the working directory as a .tif or .tiff file.
 Move this file to the project directory and then using the above docker run command, make sure that -1 is returned. Doing the same
@@ -79,3 +79,29 @@ that reasonable values are returned.
 Once you have used the transformer on your image data, you can upload your docker image to [Docker Hub](https://hub.docker.com)
 so that it can be accessed remotely. Use a tutorial such as [this one](https://ropenscilabs.github.io/r-docker-tutorial/04-Dockerhub.html)
 in order to upload your image to Docker Hub
+
+## Testing Source Code
+
+Please also refer to our [Coding Standards](https://github.com/AgPipeline/Organization-info#python) for information on how we use [pylint](https://www.pylint.org/).
+A pylint command line is:
+```bash
+# Assumes Python3.7+ is default Python version
+python -m pylint --rcfile ~/agpipeline/Organization-info/pylint.rc canopycover.py
+``` 
+
+In the `tests` folder there are testing scripts and their supporting files.
+The tests are designed to be run with [Pytest](https://docs.pytest.org/en/stable/).
+When running the tests, the root of the repository is expected to be the starting directory.
+
+The command line for running the tests is as follows:
+```bash
+# Assumes Python3.7+ is default Python version
+python -m pytest -rpP
+```
+
+If test coverage reporting is desired, we suggest using [pytest-cov](https://pytest-cov.readthedocs.io/en/latest/).
+After installing this tool, the following command line will include a coverage report in the output:
+```bash
+# Assumes Python3.7+ is default Python version
+python -m pytest --cov=. -rpP 
+```
