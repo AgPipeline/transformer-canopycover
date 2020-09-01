@@ -4,7 +4,7 @@ on:
     branches:
       - master
       - develop
-      - adding_testing
+      - reorganize_test
   pull_request:
     branches:
       - master
@@ -22,7 +22,7 @@ jobs:
           include:
             - app: pylint
               pip_installs: pylint
-              test_command: cat action_test_files.txt | xargs python3 -m pylint --rcfile ./pylint.rc
+              test_command: (cat action_test_files.txt | xargs python3 -m pylint --rcfile ./pylint.rc) && (find ./tests | grep '\.py' | xargs python3 -m pylint -d duplicate-code --rcfile ./pylint.rc)
             - app: pytest
               pip_installs: pytest pytest-cov
               test_command: python3 -m pytest --cov=. -rpP --cov-report=xml > coverage.txt
@@ -34,7 +34,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.7'
-        id: install_python_3_7
       - name: Updated python version
         run: python3 --version
       - name: PYTHONPATH environment variable
@@ -54,7 +53,7 @@ jobs:
       - name: Fetch source code
         uses: actions/checkout@v2
       - name: Finding files to process
-        run: find . -type f -name "*.py" > action_test_files.txt
+        run: find . -type f -name "*.py" | grep -v '/tests/' > action_test_files.txt
       - name: Install system requirements
         shell: bash
         run: 'sudo apt-get install -y python3-gdal gdal-bin libgdal-dev gcc g++ python3.7-dev'
@@ -87,7 +86,7 @@ jobs:
       - name: Upload testing artifact
         uses: actions/upload-artifact@v2
         with:
-          name: testing_artifacts
+          name: Testing artifacts ${{ matrix.app }}
           path: ${{ matrix.artifacts }}
         if: ${{ matrix.artifacts }}
       - name: Upload coverage to Codecov
