@@ -32,6 +32,8 @@ jobs:
         run: |
              mkdir ./inputs && chmod 777 ./inputs
              mkdir ./outputs && chmod 777 ./outputs
+      - name: List folder contents
+        run: ls -la
       - name: Copy testing data files
         run: cp "./test_data/*" "./inputs/"
       - name: Folder contents
