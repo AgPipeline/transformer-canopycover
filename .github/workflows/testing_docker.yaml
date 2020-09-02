@@ -29,8 +29,9 @@ jobs:
       - name: Copy testing data files
         run: |
              echo "test_data" && ls -l "${PWD}/test_data/"
-             echo cp "${PWD}/test_data/" "${PWD}/inputs/"
-             cp "${PWD}/test_data/" "${PWD}/inputs/"
+             echo cp "${PWD}/test_data"/* "${PWD}/inputs/"
+             cp "${PWD}/test_data"/* "${PWD}/inputs/"
+             ls -la inputs
       - name: Folder contents
         run: |
              echo "Current folder" && ls -l
