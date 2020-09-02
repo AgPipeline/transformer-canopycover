@@ -19,6 +19,23 @@ jobs:
     steps:
       - name: Fetch source code
         uses: actions/checkout@v2
+      - name: Create folders
+        run: |
+             mkdir ./inputs && chmod 777 ./inputs
+             mkdir ./outputs && chmod 777 ./outputs
+      - name: List folder contents
+        run: |
+             echo "Current folder" && ls -la
+             echo "test_data" && ls -l test_data/*
+      - name: Copy testing data files
+        run: |
+             echo cp "${PWD}/test_data/*" "${PWD}/inputs/"
+             cp "${PWD}/test_data/*" "${PWD}/inputs/"
+      - name: Folder contents
+        run: |
+             echo "Current folder" && ls -l
+             echo "Inputs folder" && ls -l ./inputs
+             echo "Outputs folder" && ls -l ./outputs
       - name: Build docker image
         run: docker build -t canopycover_test:latest ./
       - name: Compress docker image
@@ -28,21 +45,6 @@ jobs:
         with:
           name: canopycover_test_image
           path: canopycover_test_image.tar.gz
-      - name: Create folders
-        run: |
-             mkdir ./inputs && chmod 777 ./inputs
-             mkdir ./outputs && chmod 777 ./outputs
-      - name: List folder contents
-        run: |
-             echo "Current folder" && ls -la
-             echo "test_data" && ls -l test_data
-      - name: Copy testing data files
-        run: cp "test_data/*" "inputs/"
-      - name: Folder contents
-        run: |
-             echo "Current folder" && ls -l
-             echo "Inputs folder" && ls -l ./inputs
-             echo "Outputs folder" && ls -l ./outputs
       - name: Run docker test
         run: docker run --rm -v "${PWD}/inputs:/inputs" -v "${PWD}/outputs:/outputs" canopycover_test:latest --working_space /outputs --metadata /inputs/experiment.yaml stereoTop /inputs/plots.json /inputs/orthomosaic.tif
       - name: Output folder contents
