@@ -26,12 +26,11 @@ jobs:
       - name: List folder contents
         run: |
              echo "Current folder" && ls -la
+             echo "test_data" && ls -l ./test_data
       - name: Copy testing data files
         run: |
-             echo "test_data" && ls -l "${PWD}/test_data/"
-             echo cp "${PWD}/test_data"/* "${PWD}/inputs/"
-             cp "${PWD}/test_data"/* "${PWD}/inputs/"
-             ls -la inputs
+             cp "${PWD}/test_data/\*" "${PWD}/inputs/"
+             echo "inputs" && ls -l ./inputs
       - name: Folder contents
         run: |
              echo "Current folder" && ls -l
@@ -47,7 +46,7 @@ jobs:
           name: canopycover_test_image
           path: canopycover_test_image.tar.gz
       - name: Run docker test
-        run: docker run --rm -v "${PWD}/inputs:/inputs" -v "${PWD}/outputs:/outputs" canopycover_test:latest --working_space /outputs --metadata /inputs/experiment.yaml stereoTop /inputs/plots.json /inputs/orthomosaic.tif
+        run: docker run --rm -v "${PWD}/inputs:/inputs" -v "${PWD}/outputs:/outputs" canopycover_test:latest --working_space /outputs --metadata /inputs/meta.yaml /mnt/rgb_17_7_W.tif /mnt/mask_1.tif
       - name: Output folder contents
         run: echo "Outputs folder" && ls -l ./outputs
       - name: Check outputs
