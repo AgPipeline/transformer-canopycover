@@ -58,10 +58,12 @@ fi
 
 for i in $(seq 0 $(( ${#EXPECTED_CANOPYCOVER_VALUES[@]} - 1 )))
 do
-  if [[ ${EXPECTED_CANOPYCOVER_VALUES[$i]} != ${RESULT_VALUES[$i]} ]]; then
+  echo "Expected: ${EXPECTED_CANOPYCOVER_VALUES[$i]}"
+  echo "Result  : ${RESULT_VALUES[$i]}"
+  if [[ ${EXPECTED_CANOPYCOVER_VALUES[$i]} == ${RESULT_VALUES[$i]} ]]; then
+    echo "Values for index ${i} match: '${RESULT_VALUES[$i]}' '${EXPECTED_CANOPYCOVER_VALUES[$i]}'"
+  else
     echo "Result value for index ${i}: '${RESULT_VALUES[$i]}' doesn't match expected: '${EXPECTED_CANOPYCOVER_VALUES[$i]}'"
     exit 30
-  else
-    echo "Values for index ${i} match: '${RESULT_VALUES[$i]}' '${EXPECTED_CANOPYCOVER_VALUES[$i]}'"
   fi
 done
