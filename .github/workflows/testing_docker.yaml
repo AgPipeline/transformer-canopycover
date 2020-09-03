@@ -51,6 +51,7 @@ jobs:
         run: echo "Outputs folder" && ls -l ./outputs
       - name: Check outputs
         run: |
+             cat outputs/canopycover.csv
              chmod +x "./.github/workflows/docker_test_check_rgb.sh"
              "./.github/workflows/docker_test_check_rgb.sh"
 
