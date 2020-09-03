@@ -29,7 +29,7 @@ jobs:
              echo "test_data" && ls -l ./test_data
       - name: Copy testing data files
         run: |
-             cp "${PWD}/test_data/\*" "${PWD}/inputs/"
+             cp "${PWD}/test_data"/* "${PWD}/inputs/"
              echo "inputs" && ls -l ./inputs
       - name: Folder contents
         run: |
