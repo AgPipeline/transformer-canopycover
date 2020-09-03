@@ -37,7 +37,7 @@ BEGIN {
 }
 {
   if ($1 != "local_datetime") { # Skipping the header line
-    printf($2)
+    printf("%s\n", $2)
   }
 }
 END {
