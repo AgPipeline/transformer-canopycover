@@ -4,7 +4,7 @@
 
 # Define expected results
 EXPECTED_FILES=("result.json")
-EXPECTED_CANOPYCOVER_VALUES=(21.479958890030833)
+EXPECTED_CANOPYCOVER_VALUES=(99.75714285714285, 20.91874906479126)
 
 # What folder are we looking in for outputs
 if [[ ! "${1}" == "" ]]; then
@@ -44,6 +44,7 @@ END {
 }
 ' "${TARGET_FOLDER}/${CHECK_FILE}"`)
 
+echo "Result counts: ${#EXPECTED_CANOPYCOVER_VALUES[@]} vs ${#RESULT_VALUES[@]}"
 if [[ ${#EXPECTED_CANOPYCOVER_VALUES[@]} != ${#RESULT_VALUES[@]} ]]; then
   echo "Number of results found in file (${#RESULT_VALUES[@]}) don't match expected count (${#EXPECTED_CANOPYCOVER_VALUES[@]})"
   if [[ ${#RESULT_VALUES[@]} > 0 ]]; then
