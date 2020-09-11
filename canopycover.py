@@ -7,6 +7,8 @@ import copy
 import json
 import logging
 import os
+import subprocess
+import tempfile
 from typing import Union
 import numpy as np
 import dateutil.parser
@@ -29,6 +31,62 @@ TRAIT_NAME_MAP = {
     'citation_title': 'Maricopa Field Station Data and Metadata',
     'method': 'Green Canopy Cover Estimation from Field Scanner RGB images'
 }
+
+
+def _add_image_mask(source_file: str) -> np.ndarray:
+    """Adds an  image mask to the specified file
+    Arguments:
+        source_file: the file to add a mask to
+    Returns:
+        Returns an array representing the image
+    Exceptions:
+        Throws a RuntimeError exception if a problem occurs
+    """
+    pixels = None
+    caught_exception = False
+    file_list_name, file_vrt_name, file_mask_name = (None, None, None)
+    try:
+        # Create the list file
+        _, file_list_name = tempfile.mkstemp('.txt', 'list_')
+        with open(file_list_name, 'w') as out_file:
+            out_file.write(os.path.abspath(source_file))
+
+        # Create the VRT (virtual) file name
+        _, file_vrt_name = tempfile.mkstemp('.vrt')
+
+        # Create the VRT file
+        cmd = 'gdalbuildvrt -addalpha -srcnodata "-99 -99 -99" -overwrite -input_file_list ' + file_list_name +\
+              ' ' + file_vrt_name
+        subprocess.call(cmd, shell=True)
+
+        # Generate the final tif image
+        _, file_mask_name = tempfile.mkstemp('.tif')
+        cmd = 'gdal_translate -co COMPRESS=LZW -co BIGTIFF=YES ' + file_vrt_name + ' ' + file_mask_name
+        subprocess.call(cmd, shell=True)
+
+        # Load the masked file
+        raster = gdal.Open(file_mask_name)
+        pixels = np.array(raster.ReadAsArray())
+
+    except Exception:
+        caught_exception = True
+        if logging.getLogger().level == logging.DEBUG:
+            logging.exception('Unable to generate alpha mask for image "%s"', source_file)
+        else:
+            logging.error('Exception caught trying to generate alpha mask for image "%s"', source_file)
+
+    # Clean up
+    if os.path.exists(file_list_name):
+        os.remove(file_list_name)
+    if os.path.exists(file_vrt_name):
+        os.remove(file_vrt_name)
+    if os.path.exists(file_mask_name):
+        os.remove(file_mask_name)
+
+    if caught_exception:
+        raise RuntimeError('Exception detected while trying to generate alpha mask for image "%s"' % source_file)
+
+    return pixels
 
 
 def get_fields() -> list:
@@ -293,12 +351,13 @@ class CanopyCover(algorithm.Algorithm):
                             break
 
                         # Check if there's an Alpha channel and add it if not
-                        if len(pxarray.shape) >= 4:
+                        if pxarray.shape[0] >= 4:
                             image_to_use = pxarray
                         else:
                             logging.info('Adding missing alpha channel to loaded image from "%s"', one_file)
-                            mask = np.where(np.sum(pxarray, axis=0) == 0, 0, 255).astype(pxarray.dtype)
-                            image_to_use = np.stack((pxarray[0], pxarray[1], pxarray[2], mask))
+                            image_to_use = _add_image_mask(one_file)
+#                            mask = np.where(np.sum(pxarray, axis=0) == 0, 0, 255).astype(pxarray.dtype)
+#                            image_to_use = np.stack((pxarray[0], pxarray[1], pxarray[2], mask))
                             del pxarray     # Potentially free up memory
 
                         logging.debug("Calculating canopy cover")
