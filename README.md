@@ -25,19 +25,24 @@ This algorithm expects a one-layer geotiff file with the extention .tif or .tiff
 ## Use 
 
 ### Sample Docker Command line
-First build the Docker image using the Dockerfile, which in this case will be named agpipeline/canopycover:3.0 
-Read up on [docker build](https://docs.docker.com/engine/reference/commandline/build/) if needed.
 
-```docker build -t agpipeline/canopycover:3.0 ./```
+First build the Docker image, using the Dockerfile, and tag it agdrone/transformer-canopycover:1.1. 
+Read about the [docker build](https://docs.docker.com/engine/reference/commandline/build/) command if needed.
+
+```bash
+docker build -t agdrone/transformer-canopycover:1.1 ./
+```
 
 Below is a sample command line that shows how the canopy cover Docker image could be run.
 An explanation of the command line options used follows.
 Be sure to read up on the [docker run](https://docs.docker.com/engine/reference/run/) command line for more information.
 
-```docker run --rm --mount "src=/home/test,target=/mnt,type=bind" -e "BETYDB_URL=https://terraref.ncsa.illinois.edu/bety/" -e "BETYDB_KEY=<key value>" agpipeline/canopycover:3.0 --working_space "/mnt" --metadata "/mnt/08f445ef-b8f9-421a-acf1-8b8c206c1bb8_metadata.json" --citation_author "Me Myself" --citation_title "Something in the green" --citation_year "2019" --germplasm_name "Big Plant" "/mnt/rgb_mask_L2_my-site_2018-10-01__14-20-40_mask.tif"```
+```bash
+docker run --rm --mount "src=${PWD}/test_data,target=/mnt,type=bind" agdrone/transformer-canopycover:1.1 --working_space "/mnt" --metadata "/mnt/experiment.yaml" --citation_author "Me Myself" --citation_title "Something in the green" --citation_year "2019" --germplasm_name "Big Plant" "/mnt/rgb_1_2_E.tif"
+```
 
-This example command line assumes the source files are located in the `/home/test` folder of the local machine.
-The name of the image to run is `agpipeline/canopycover:3.0`.
+This example command line assumes the source files are located in the `test_data` folder off the current folder.
+The name of the image to run is `agdrone/transformer-canopycover:1.1`.
 
 We are using the same folder for the source metadata and the cleaned metadata.
 By using multiple `--mount` options, the source and output files can be separated.
@@ -47,22 +52,20 @@ Everything between 'docker' and the name of the image are docker commands.
 
 - `run` indicates we want to run an image
 - `--rm` automatically delete the image instance after it's run
-- `--mount "src=/home/test,target=/mnt,type=bind"` mounts the `/home/test` folder to the `/mnt` folder of the running image
-- `-e "BETYDB_URL=https://terraref.ncsa.illinois.edu/bety/"` the URL to the BETYdb instance to fetch plot boundaries, and other data, from
-- `-e "BETYDB_KEY=<key value>"` the key associated with the BETYdb URL (replace `<key value>` with value of your key)
+- `--mount "src=${PWD}/test_data,target=/mnt,type=bind"` mounts the `${PWD}/test` folder to the `/mnt` folder of the running image
 
-We mount the `/home/test` folder to the running image to make available the file to the software in the image.
+We mount the `${PWD}/test` folder to the running image to make available the file to the software in the image.
 
 **Image's commands** \
 The command line parameters after the image name are passed to the software inside the image.
 Note that the paths provided are relative to the running image (see the --mount option specified above).
 
 - `--working_space "/mnt"` specifies the folder to use as a workspace
-- `--metadata "/mnt/08f445ef-b8f9-421a-acf1-8b8c206c1bb8_metadata.json"` is the name of the source metadata to be cleaned
-- `--citation_author "<author name>"` the name of the author to cite in the resulting CSV file(s)
-- `--citation_title "<title>"` the title of the citation to store in the resulting CSV file(s)
-- `--citation_year "<year>"` the year of the citation to store in the resulting CSV file(s)
-- `"/mnt/rgb_mask_L2_my-site_2018-10-01__14-20-40_mask.tif"` the names of one or more image files to use when calculating plot-level canopy cover
+- `--metadata "/mnt/experiment.yaml"` is the name of the source metadata to be cleaned
+- `--citation_author "Me Myself"` the name of the author to cite in the resulting CSV file(s)
+- `--citation_title "Something in the green"` the title of the citation to store in the resulting CSV file(s)
+- `--citation_year "2019"` the year of the citation to store in the resulting CSV file(s)
+- `"mnt/rgb_1_2_E.tif"` the names of one or more image files to use when calculating plot-level canopy cover
 
 **Testing the Docker Transformer** \
 In order to make sure that the canopy cover transformer is functioning correctly, create an image that is all black
@@ -80,13 +83,31 @@ Once you have used the transformer on your image data, you can upload your docke
 so that it can be accessed remotely. Use a tutorial such as [this one](https://ropenscilabs.github.io/r-docker-tutorial/04-Dockerhub.html)
 in order to upload your image to Docker Hub
 
-## Testing Source Code
+## Acceptance Testing
 
+There are automated test suites that are run via [GitHub Actions](https://docs.github.com/en/actions).
+In this section we provide details on these tests so that they can be run locally as well.
+
+These tests are run when a [Pull Request](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests) or [push](https://docs.github.com/en/github/using-git/pushing-commits-to-a-remote-repository) occurs on the `develop` or `master` branches.
+There may be other instances when these tests are automatically run, but these are considered the mandatory events and branches.
+
+### PyLint and PyTest
+
+These tests are run against any Python scripts that are in the repository.
+
+[PyLint](https://www.pylint.org/) is used to both check that Python code conforms to the recommended coding style, and checks for syntax errors.
+The default behavior of PyLint is modified by the `pylint.rc` file in the [Organization-info](https://github.com/AgPipeline/Organization-info) repository.
 Please also refer to our [Coding Standards](https://github.com/AgPipeline/Organization-info#python) for information on how we use [pylint](https://www.pylint.org/).
-A pylint command line is:
+
+The following command can be used to fetch the `pylint.rc` file:
+```bash
+wget https://raw.githubusercontent.com/AgPipeline/Organization-info/master/pylint.rc
+```
+
+Assuming the `pylint.rc` file is in the current folder, the following command can be used against the `canopycover.py` file:
 ```bash
 # Assumes Python3.7+ is default Python version
-python -m pylint --rcfile ~/agpipeline/Organization-info/pylint.rc canopycover.py
+python -m pylint --rcfile ./pylint.rc canopycover.py
 ``` 
 
 In the `tests` folder there are testing scripts and their supporting files.
@@ -99,9 +120,14 @@ The command line for running the tests is as follows:
 python -m pytest -rpP
 ```
 
-If test coverage reporting is desired, we suggest using [pytest-cov](https://pytest-cov.readthedocs.io/en/latest/).
-After installing this tool, the following command line will include a coverage report in the output:
+If [pytest-cov](https://pytest-cov.readthedocs.io/en/latest/) is installed, it can be used to generate a code coverage report as part of running PyTest.
+The code coverage report shows how much of the code has been tested; it doesn't indicate **how well** that code has been tested.
+The modified PyTest command line including coverage is:
 ```bash
 # Assumes Python3.7+ is default Python version
 python -m pytest --cov=. -rpP 
 ```
+
+### Docker Testing
+
+The Docker testing Workflow replicate the examples in this document to ensure they continue to work.
