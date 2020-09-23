@@ -167,13 +167,13 @@ def setup_default_traits(traits: dict, args: argparse.Namespace, full_md: list) 
     # Check metadata
     if full_md:
         for one_md in full_md:
-            if 'germplasmName' in one_md:
-                new_traits['species'] = one_md['germplasmName']
+            if 'species' in one_md:
+                new_traits['species'] = one_md['species']
                 traits_modified = True
 
     # Check command line parameters
-    if args.germplasmName is not None:
-        new_traits['species'] = args.germplasmName
+    if args.species is not None:
+        new_traits['species'] = args.species
         traits_modified = True
     if args.citationAuthor is not None:
         new_traits['citation_author'] = args.citationAuthor
@@ -249,8 +249,8 @@ class CanopyCover(algorithm.Algorithm):
         parser.add_argument('--citation_year', dest="citationYear", type=str, nargs='?',
                             help="year of citation to use when generating measurements")
 
-        parser.add_argument('--germplasm_name', dest="germplasmName", type=str, nargs='?',
-                            help="name of the germplasm associated with the canopy cover")
+        parser.add_argument('--species', dest="species", type=str, nargs='?',
+                            help="name of the species associated with the canopy cover")
 
     def check_continue(self, environment: Environment, check_md: dict, transformer_md: list, full_md: list) -> tuple:
         """Checks if conditions are right for continuing processing
