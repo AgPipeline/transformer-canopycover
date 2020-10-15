@@ -38,7 +38,7 @@ An explanation of the command line options used follows.
 Be sure to read up on the [docker run](https://docs.docker.com/engine/reference/run/) command line for more information.
 
 ```bash
-docker run --rm --mount "src=${PWD}/test_data,target=/mnt,type=bind" agdrone/transformer-canopycover:1.1 --working_space "/mnt" --metadata "/mnt/experiment.yaml" --citation_author "Me Myself" --citation_title "Something in the green" --citation_year "2019" --germplasm_name "Big Plant" "/mnt/rgb_1_2_E.tif"
+docker run --rm --mount "src=${PWD}/test_data,target=/mnt,type=bind" agdrone/transformer-canopycover:1.1 --working_space "/mnt" --metadata "/mnt/experiment.yaml" --citation_author "Me Myself" --citation_title "Something in the green" --citation_year "2019" --species "Big Plant" "/mnt/rgb_1_2_E.tif"
 ```
 
 This example command line assumes the source files are located in the `test_data` folder off the current folder.
