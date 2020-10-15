@@ -9,7 +9,9 @@ import json
 import os
 import random
 import re
+import shutil
 import string
+import tempfile
 from shutil import rmtree
 from subprocess import getstatusoutput
 #import pytest
@@ -53,15 +55,17 @@ def test_no_args():
     changed to some non-zero value to indicate a failure.
     """
     ret_val, out = getstatusoutput(SOURCE_PATH)
-    assert ret_val == 0
-    assert re.search('{}', out)
+    assert ret_val == 1
+    assert re.search('FileNotFoundError', out)
 
 
 def test_no_metadata():
     """ Run with a file but no metadata"""
-    ret_val, out = getstatusoutput(f'{SOURCE_PATH} {INPUT1}')
+    temp_dir = tempfile.mkdtemp()
+    ret_val, out = getstatusoutput(f'{SOURCE_PATH} --working_space {temp_dir}  {INPUT1}')
+    shutil.rmtree(temp_dir)
     assert ret_val == 0
-    assert re.search('{}', out)
+    assert re.search('"code": 0', out)
 
 
 def test_get_fields():
