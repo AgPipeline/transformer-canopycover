@@ -167,13 +167,13 @@ def setup_default_traits(traits: dict, args: argparse.Namespace, full_md: list) 
     # Check metadata
     if full_md:
         for one_md in full_md:
-            if 'germplasmName' in one_md:
-                new_traits['species'] = one_md['germplasmName']
+            if 'species' in one_md:
+                new_traits['species'] = one_md['species']
                 traits_modified = True
 
     # Check command line parameters
-    if args.germplasmName is not None:
-        new_traits['species'] = args.germplasmName
+    if args.species is not None:
+        new_traits['species'] = args.species
         traits_modified = True
     if args.citationAuthor is not None:
         new_traits['citation_author'] = args.citationAuthor
@@ -198,12 +198,8 @@ def calculate_canopycover_masked(pxarray: np.ndarray) -> float:
     Notes:
         From TERRA REF canopy cover: https://github.com/terraref/extractors-stereo-rgb/tree/master/canopycover
     """
-    # If > 75% is NoData, return a -1 ccvalue for omission later
     total_size = pxarray.shape[0] * pxarray.shape[1]
     nodata = np.count_nonzero(pxarray[:, :, 3] == 0)
-    nodata_ratio = nodata/float(total_size)
-    if nodata_ratio > 0.75:
-        return -1
 
     # For masked images, all pixels with rgb>0,0,0 are considered canopy
     data = pxarray[pxarray[:, :, 3] == 255]
@@ -249,8 +245,8 @@ class CanopyCover(algorithm.Algorithm):
         parser.add_argument('--citation_year', dest="citationYear", type=str, nargs='?',
                             help="year of citation to use when generating measurements")
 
-        parser.add_argument('--germplasm_name', dest="germplasmName", type=str, nargs='?',
-                            help="name of the germplasm associated with the canopy cover")
+        parser.add_argument('--species', dest="species", type=str, nargs='?',
+                            help="name of the species associated with the canopy cover")
 
     def check_continue(self, environment: Environment, check_md: dict, transformer_md: list, full_md: list) -> tuple:
         """Checks if conditions are right for continuing processing
@@ -356,8 +352,6 @@ class CanopyCover(algorithm.Algorithm):
                         else:
                             logging.info('Adding missing alpha channel to loaded image from "%s"', one_file)
                             image_to_use = _add_image_mask(one_file)
-#                            mask = np.where(np.sum(pxarray, axis=0) == 0, 0, 255).astype(pxarray.dtype)
-#                            image_to_use = np.stack((pxarray[0], pxarray[1], pxarray[2], mask))
                             del pxarray     # Potentially free up memory
 
                         logging.debug("Calculating canopy cover")
@@ -389,6 +383,8 @@ class CanopyCover(algorithm.Algorithm):
                     else:
                         continue
                 except Exception as ex:
+                    if logging.getLogger().level == logging.DEBUG:
+                        logging.exception("Exception caught while processing canopy")
                     logging.warning("Exception caught while processing canopy cover: %s", str(ex))
                     logging.warning("Error generating canopy cover for '%s'", one_file)
                     logging.warning("    plot name: '%s'", plot_name)
@@ -398,7 +394,7 @@ class CanopyCover(algorithm.Algorithm):
         if not num_files:
             return {'code': -1000, 'error': "No files were processed"}
         if not total_plots_calculated:
-            return {'code': -1001, 'error': "No plots intersected with the images provided"}
+            return {'code': -1001, 'error': "No images were able to have their canopy cover calculated"}
 
         # Setup the metadata for returning files
         file_md = []

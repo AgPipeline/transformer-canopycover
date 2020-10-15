@@ -44,7 +44,7 @@ usage: canopycover.py [-h] [--debug] [--info] [--result [RESULT]]
                       [--citation_author [CITATIONAUTHOR]]
                       [--citation_title [CITATIONTITLE]]
                       [--citation_year [CITATIONYEAR]]
-                      [--germplasm_name [GERMPLASMNAME]]
+                      [--species [SPECIES]]
                       ...
 
 Canopy Cover by Plot (Percentage of Green Pixels)
@@ -69,8 +69,8 @@ optional arguments:
                         measurements
   --citation_year [CITATIONYEAR]
                         year of citation to use when generating measurements
-  --germplasm_name [GERMPLASMNAME]
-                        name of the germplasm associated with the canopy cover
+  --species [SPECIES]
+                        name of the species associated with the canopy cover
 
 terra.stereo-rgb.canopycover version 3.0 author Chris Schnaufer
 schnaufer@email.arizona.edu
@@ -138,7 +138,7 @@ usage: canopycover.py [-h] [--debug] [--info] [--result [RESULT]] -m METADATA
                       [--citation_author [CITATIONAUTHOR]]
                       [--citation_title [CITATIONTITLE]]
                       [--citation_year [CITATIONYEAR]]
-                      [--germplasm_name [GERMPLASMNAME]]
+                      [--species [SPECIES]]
                       ...
 canopycover.py: error: the following arguments are required: -m/--metadata
 ----
@@ -152,7 +152,7 @@ usage: canopycover.py [-h] [--debug] [--info] [--result [RESULT]] -m METADATA
                       [--citation_author [CITATIONAUTHOR]]
                       [--citation_title [CITATIONTITLE]]
                       [--citation_year [CITATIONYEAR]]
-                      [--germplasm_name [GERMPLASMNAME]]
+                      [--species [SPECIES]]
                       ...
 canopycover.py: error: argument -m/--metadata: can't open 'blargh': \
 [Errno 2] No such file or directory: 'blargh'
@@ -267,7 +267,7 @@ usage: canopycover.py [-h] [--debug] [--info] [--result [RESULT]]
                       [--citation_author [CITATIONAUTHOR]]
                       [--citation_title [CITATIONTITLE]]
                       [--citation_year [CITATIONYEAR]]
-                      [--germplasm_name [GERMPLASMNAME]]
+                      [--species [SPECIES]]
                       file_list [file_list ...]
 canopycover.py: error: the following arguments are required: file_list
 ----
@@ -293,7 +293,7 @@ usage: canopycover.py [-h] [--debug] [--info] [--result [RESULT]]
                       [--citation_author [CITATIONAUTHOR]]
                       [--citation_title [CITATIONTITLE]]
                       [--citation_year [CITATIONYEAR]]
-                      [--germplasm_name [GERMPLASMNAME]]
+                      [--species [SPECIES]]
                       ...
 canopycover.py: error: Invalid files: foo, bar
 ----
