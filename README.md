@@ -75,8 +75,13 @@ with a completely white image, make sure that 0 is returned.
 
 The reason this should be done is in order to test the extremes for image data.
 
-Next test on these [sample plot images](https://drive.google.com/file/d/1xWRU0YgK3Y9aUy5TdRxj14gmjLlozGxo/view) and make sure
-that reasonable values are returned.
+Next test on sample plot images and make sure that reasonable values are returned.
+The following commands can be used to retrieve the plot images:
+```bash
+mkdir test_data
+curl https://de.cyverse.org/dl/d/4108BB75-AAA3-48E1-BBD4-E10B06CADF54/sample_plot_images.zip -o test_data/sample_plot_images.zip
+unzip test_data/sample_plot_images.zip -d test_data/
+```
 
 **Deploying the Transformer** \
 Once you have used the transformer on your image data, you can upload your docker image to [Docker Hub](https://hub.docker.com)

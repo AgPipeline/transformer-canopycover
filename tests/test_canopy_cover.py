@@ -54,14 +54,14 @@ def test_no_args():
     """
     ret_val, out = getstatusoutput(SOURCE_PATH)
     assert ret_val == 0
-    assert re.search('No metadata paths were specified', out)
+    assert re.search('{}', out)
 
 
 def test_no_metadata():
     """ Run with a file but no metadata"""
     ret_val, out = getstatusoutput(f'{SOURCE_PATH} {INPUT1}')
     assert ret_val == 0
-    assert re.search('No metadata paths were specified', out)
+    assert re.search('{}', out)
 
 
 def test_get_fields():
