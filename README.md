@@ -79,7 +79,7 @@ Next test on sample plot images and make sure that reasonable values are returne
 The following commands can be used to retrieve the plot images:
 ```bash
 mkdir test_data
-curl -X GET https://de.cyverse.org/dl/d/4108BB75-AAA3-48E1-BBD4-E10B06CADF54/sample_plot_images.zip -o test_data/sample_plot_images.zip
+curl https://de.cyverse.org/dl/d/4108BB75-AAA3-48E1-BBD4-E10B06CADF54/sample_plot_images.zip -o test_data/sample_plot_images.zip
 unzip test_data/sample_plot_images.zip -d test_data/
 ```
 
