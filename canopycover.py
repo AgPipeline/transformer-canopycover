@@ -4,7 +4,6 @@
 
 import argparse
 import copy
-import json
 import logging
 import os
 import subprocess
@@ -31,6 +30,9 @@ TRAIT_NAME_MAP = {
     'citation_title': 'Maricopa Field Station Data and Metadata',
     'method': 'Green Canopy Cover Estimation from Field Scanner RGB images'
 }
+
+# How many significant digits the calculated value has
+SIGNIFICANT_DIGITS = 3
 
 
 def _add_image_mask(source_file: str) -> np.ndarray:
@@ -292,12 +294,9 @@ class CanopyCover(algorithm.Algorithm):
         # pylint: disable=unused-argument,too-many-locals,too-many-branches,too-many-statements
         # Setup local variables
         timestamp = dateutil.parser.parse(check_md['timestamp'])
-        datestamp = timestamp.strftime("%Y-%m-%d")
         localtime = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
 
-        geo_csv_filename = os.path.join(check_md['working_folder'], "canopycover_geostreams.csv")
         bety_csv_filename = os.path.join(check_md['working_folder'], "canopycover.csv")
-        geo_file = open(geo_csv_filename, 'w')
         bety_file = open(bety_csv_filename, 'w')
 
         (fields, traits) = get_traits_table()
@@ -307,11 +306,7 @@ class CanopyCover(algorithm.Algorithm):
         traits = setup_default_traits(traits, environment.args, full_md)
 
         # Preparing and writing headers
-        geo_csv_header = ','.join(['site', 'trait', 'lat', 'lon', 'dp_time',
-                                   'source', 'value', 'timestamp'])
         bety_csv_header = ','.join(map(str, fields))
-        if geo_file:
-            geo_file.write(geo_csv_header + "\n")
         if bety_file:
             bety_file.write(bety_csv_header + "\n")
 
@@ -335,7 +330,6 @@ class CanopyCover(algorithm.Algorithm):
 
             num_files += 1
             for plot_name in overlap_plots:
-                centroid = json.loads(centroid_as_json(image_bounds))["coordinates"]
 
                 try:
                     raster = gdal.Open(one_file)
@@ -356,22 +350,13 @@ class CanopyCover(algorithm.Algorithm):
 
                         logging.debug("Calculating canopy cover")
                         cc_val = calculate_canopycover_masked(np.rollaxis(image_to_use, 0, 3))
+                        cc_val_str = format(cc_val, '.' + str(SIGNIFICANT_DIGITS) + 'g')
 
                         # Write the datapoint geographically and otherwise
                         logging.debug("Writing to CSV files")
-                        if geo_file:
-                            csv_data = ','.join([plot_name,
-                                                 'Canopy Cover',
-                                                 str(centroid[1]),
-                                                 str(centroid[0]),
-                                                 localtime,
-                                                 one_file,
-                                                 str(cc_val),
-                                                 datestamp])
-                            geo_file.write(csv_data + "\n")
 
                         if bety_file:
-                            traits['canopy_cover'] = str(cc_val)
+                            traits['canopy_cover'] = cc_val_str
                             traits['site'] = plot_name
                             traits['local_datetime'] = localtime
                             trait_list = generate_traits_list(traits)
@@ -398,15 +383,10 @@ class CanopyCover(algorithm.Algorithm):
 
         # Setup the metadata for returning files
         file_md = []
-        if geo_file:
-            file_md.append({'path': geo_csv_filename, 'key': 'csv'})
         if bety_file:
             file_md.append({'path': bety_csv_filename, 'key': 'csv'})
 
         # Perform cleanup
-        if geo_file:
-            geo_file.close()
-            del geo_file
         if bety_file:
             bety_file.close()
             del bety_file
