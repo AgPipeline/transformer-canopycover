@@ -294,7 +294,10 @@ class CanopyCover(algorithm.Algorithm):
         # pylint: disable=unused-argument,too-many-locals,too-many-branches,too-many-statements
         # Setup local variables
         timestamp = dateutil.parser.parse(check_md['timestamp'])
-        localtime = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
+        if len(timestamp) > 0:
+            localtime = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
+        else:
+            localtime = ""
 
         bety_csv_filename = os.path.join(check_md['working_folder'], "canopycover.csv")
         bety_file = open(bety_csv_filename, 'w')
