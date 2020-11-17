@@ -4,7 +4,6 @@
 
 import argparse
 import copy
-import json
 import logging
 import os
 import subprocess
@@ -24,13 +23,12 @@ TRAIT_NAME_ARRAY_VALUE = ['canopy_cover', 'site']
 
 # Mapping of default trait names to fixed values
 TRAIT_NAME_MAP = {
-    'access_level': '2',
     'species': 'Unknown',
-    'citation_author': '"Zongyang, Li"',
-    'citation_year': '2016',
-    'citation_title': 'Maricopa Field Station Data and Metadata',
     'method': 'Green Canopy Cover Estimation from Field Scanner RGB images'
 }
+
+# How many significant digits the calculated value has
+SIGNIFICANT_DIGITS = 3
 
 
 def _add_image_mask(source_file: str) -> np.ndarray:
@@ -92,8 +90,7 @@ def _add_image_mask(source_file: str) -> np.ndarray:
 def get_fields() -> list:
     """Returns the supported field names as a list
     """
-    return ['local_datetime', 'canopy_cover', 'access_level', 'species', 'site',
-            'citation_author', 'citation_year', 'citation_title', 'method']
+    return ['local_datetime', 'canopy_cover', 'species', 'site', 'method']
 
 
 def get_default_trait(trait_name: str) -> Union[str, list]:
@@ -175,15 +172,6 @@ def setup_default_traits(traits: dict, args: argparse.Namespace, full_md: list) 
     if args.species is not None:
         new_traits['species'] = args.species
         traits_modified = True
-    if args.citationAuthor is not None:
-        new_traits['citation_author'] = args.citationAuthor
-        traits_modified = True
-    if args.citationTitle is not None:
-        new_traits['citation_title'] = args.citationTitle
-        traits_modified = True
-    if args.citationYear is not None:
-        new_traits['citation_year'] = args.citationYear
-        traits_modified = True
 
     # Return the appropriate traits
     return new_traits if traits_modified else traits
@@ -222,6 +210,41 @@ def centroid_as_json(geom: ogr.Geometry) -> str:
     return centroid.ExportToJson()
 
 
+def get_plot_species(plot_name: str, full_md: list, args: argparse.Namespace) -> str:
+    """Attempts to find the plot name and return its associated species
+    Arguments:
+        plot_name: the name of the plot to find the species of
+        full_md: the full list of metadata
+        args: the command line arguments which may have a species override
+    Returns:
+        Returns the found species or "Unknown" if the plot was not found
+    Notes:
+        Returns the first match found. If not found, the return value will be one of the following (in
+        priority order): the case-insensitive plot name match, the command line species argument, "Unknown"
+    """
+    possible = None
+    # Disable pylint nested block depth check to avoid 2*N looping (save lower case possibility vs. 2 loops
+    # with one check in each)
+    # pylint: disable=too-many-nested-blocks
+    for one_md in full_md:
+        if 'plots' in one_md:
+            for one_plot in one_md['plots']:
+                # Try to find the plot name in 'plots' in a case sensitive way, followed by case insensitive
+                if 'name' in one_plot:
+                    if str(one_plot['name']) == plot_name:
+                        if 'species' in one_plot:
+                            return one_plot['species']
+                    elif str(one_plot['name']).lower() == plot_name.lower():
+                        if 'species' in one_plot:
+                            possible = one_plot['species']
+
+    # Check if we found a possibility, but not an exact match
+    if possible is not None:
+        return possible
+
+    return args.species if args.species is not None else "Unknown"
+
+
 class CanopyCover(algorithm.Algorithm):
     """Calculates canopy cover percentage on soil-masked image"""
 
@@ -236,15 +259,6 @@ class CanopyCover(algorithm.Algorithm):
             parser: instance of argparse
         """
         # pylint: disable=no-self-use
-        parser.add_argument('--citation_author', dest="citationAuthor", type=str, nargs='?',
-                            help="author of citation to use when generating measurements")
-
-        parser.add_argument('--citation_title', dest="citationTitle", type=str, nargs='?',
-                            help="title of the citation to use when generating measurements")
-
-        parser.add_argument('--citation_year', dest="citationYear", type=str, nargs='?',
-                            help="year of citation to use when generating measurements")
-
         parser.add_argument('--species', dest="species", type=str, nargs='?',
                             help="name of the species associated with the canopy cover")
 
@@ -292,28 +306,23 @@ class CanopyCover(algorithm.Algorithm):
         # pylint: disable=unused-argument,too-many-locals,too-many-branches,too-many-statements
         # Setup local variables
         timestamp = dateutil.parser.parse(check_md['timestamp'])
-        datestamp = timestamp.strftime("%Y-%m-%d")
-        localtime = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
+        if timestamp:
+            localtime = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
+        else:
+            localtime = ""
 
-        geo_csv_filename = os.path.join(check_md['working_folder'], "canopycover_geostreams.csv")
-        bety_csv_filename = os.path.join(check_md['working_folder'], "canopycover.csv")
-        geo_file = open(geo_csv_filename, 'w')
-        bety_file = open(bety_csv_filename, 'w')
+        save_csv_filename = os.path.join(check_md['working_folder'], "canopycover.csv")
+        save_file = open(save_csv_filename, 'w')
 
         (fields, traits) = get_traits_table()
 
         # Setup default trait values
-        traits['citation_year'] = timestamp.year
         traits = setup_default_traits(traits, environment.args, full_md)
 
         # Preparing and writing headers
-        geo_csv_header = ','.join(['site', 'trait', 'lat', 'lon', 'dp_time',
-                                   'source', 'value', 'timestamp'])
-        bety_csv_header = ','.join(map(str, fields))
-        if geo_file:
-            geo_file.write(geo_csv_header + "\n")
-        if bety_file:
-            bety_file.write(bety_csv_header + "\n")
+        save_csv_header = ','.join(map(str, fields))
+        if save_file:
+            save_file.write(save_csv_header + "\n")
 
         # Loop through finding all image files
         image_exts = self.supported_file_ext
@@ -335,7 +344,6 @@ class CanopyCover(algorithm.Algorithm):
 
             num_files += 1
             for plot_name in overlap_plots:
-                centroid = json.loads(centroid_as_json(image_bounds))["coordinates"]
 
                 try:
                     raster = gdal.Open(one_file)
@@ -356,27 +364,19 @@ class CanopyCover(algorithm.Algorithm):
 
                         logging.debug("Calculating canopy cover")
                         cc_val = calculate_canopycover_masked(np.rollaxis(image_to_use, 0, 3))
+                        cc_val_str = format(cc_val, '.' + str(SIGNIFICANT_DIGITS) + 'g')
 
                         # Write the datapoint geographically and otherwise
                         logging.debug("Writing to CSV files")
-                        if geo_file:
-                            csv_data = ','.join([plot_name,
-                                                 'Canopy Cover',
-                                                 str(centroid[1]),
-                                                 str(centroid[0]),
-                                                 localtime,
-                                                 one_file,
-                                                 str(cc_val),
-                                                 datestamp])
-                            geo_file.write(csv_data + "\n")
 
-                        if bety_file:
-                            traits['canopy_cover'] = str(cc_val)
+                        if save_file:
+                            traits['canopy_cover'] = cc_val_str
+                            traits['species'] = get_plot_species(plot_name, full_md, environment.args)
                             traits['site'] = plot_name
                             traits['local_datetime'] = localtime
                             trait_list = generate_traits_list(traits)
                             csv_data = ','.join(map(str, trait_list))
-                            bety_file.write(csv_data + "\n")
+                            save_file.write(csv_data + "\n")
 
                         total_plots_calculated += 1
 
@@ -398,18 +398,13 @@ class CanopyCover(algorithm.Algorithm):
 
         # Setup the metadata for returning files
         file_md = []
-        if geo_file:
-            file_md.append({'path': geo_csv_filename, 'key': 'csv'})
-        if bety_file:
-            file_md.append({'path': bety_csv_filename, 'key': 'csv'})
+        if save_file:
+            file_md.append({'path': save_csv_filename, 'key': 'csv'})
 
         # Perform cleanup
-        if geo_file:
-            geo_file.close()
-            del geo_file
-        if bety_file:
-            bety_file.close()
-            del bety_file
+        if save_file:
+            save_file.close()
+            del save_file
 
         return {'code': 0, 'files': file_md}
 

@@ -4,7 +4,7 @@
 
 # Define expected results
 EXPECTED_FILES=("result.json")
-EXPECTED_CANOPYCOVER_VALUES=(99.75714285714285 20.91874906479126)
+EXPECTED_CANOPYCOVER_VALUES=(99.8 20.9)
 
 # What folder are we looking in for outputs
 if [[ ! "${1}" == "" ]]; then
