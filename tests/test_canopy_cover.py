@@ -170,9 +170,7 @@ def test_good_input():
 
         canopy = csv.DictReader(open(canopycover))
         canopy_flds = [
-            'local_datetime', 'canopy_cover', 'access_level', 'species',
-            'site', 'citation_author', 'citation_year', 'citation_title',
-            'method'
+            'local_datetime', 'canopy_cover', 'species', 'site', 'method'
         ]
         assert canopy.fieldnames == canopy_flds
 
