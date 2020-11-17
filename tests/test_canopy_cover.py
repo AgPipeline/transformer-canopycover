@@ -163,25 +163,10 @@ def test_good_input():
         assert 'files' in result
         out_files = [f['path'] for f in result['files']]
 
-        geostreams = f'{out_dir}/canopycover_geostreams.csv'
         canopycover = f'{out_dir}/canopycover.csv'
-        assert geostreams in out_files
         assert canopycover in out_files
 
-        assert os.path.isfile(geostreams)
         assert os.path.isfile(canopycover)
-
-        geo = csv.DictReader(open(geostreams))
-        geo_flds = [
-            'site', 'trait', 'lat', 'lon', 'dp_time', 'source', 'value',
-            'timestamp'
-        ]
-        assert geo.fieldnames == geo_flds
-
-        geo_data = list(geo)
-        assert len(geo_data) == 1
-
-        assert geo_data[0]['lat'] == '3660045.559613465'
 
         canopy = csv.DictReader(open(canopycover))
         canopy_flds = [
@@ -194,7 +179,7 @@ def test_good_input():
         canopy_data = list(canopy)
         assert len(canopy_data) == 1
 
-        assert canopy_data[0]['canopy_cover'] == '99.75714285714285'
+        assert canopy_data[0]['canopy_cover'] == '99.8'
 
     finally:
         if os.path.isdir(out_dir):
