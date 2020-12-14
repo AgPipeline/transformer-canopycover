@@ -55,8 +55,8 @@ def test_no_args():
     changed to some non-zero value to indicate a failure.
     """
     ret_val, out = getstatusoutput(SOURCE_PATH)
-    assert ret_val == 1
-    assert re.search('FileNotFoundError', out)
+    assert ret_val != 0
+    assert re.search('canopycover.py: error: the following arguments are required: -m/--metadata, file_list', out)
 
 
 def test_no_metadata():
@@ -64,8 +64,8 @@ def test_no_metadata():
     temp_dir = tempfile.mkdtemp()
     ret_val, out = getstatusoutput(f'{SOURCE_PATH} --working_space {temp_dir}  {INPUT1}')
     shutil.rmtree(temp_dir)
-    assert ret_val == 0
-    assert re.search('"code": 0', out)
+    assert ret_val != 0
+    assert re.search('canopycover.py: error: the following arguments are required: -m/--metadata', out)
 
 
 def test_get_fields():
@@ -152,7 +152,7 @@ def test_good_input():
     os.makedirs(out_dir)
 
     try:
-        cmd = f'{SOURCE_PATH} --working_space {out_dir} --metadata {META} {INPUT1}'
+        cmd = f'{SOURCE_PATH} {INPUT1} --working_space {out_dir} --metadata {META}'
         ret_val, _ = getstatusoutput(cmd)
         assert ret_val == 0
 
