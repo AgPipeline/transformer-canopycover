@@ -12,6 +12,7 @@ from typing import Union
 import numpy as np
 import dateutil.parser
 from agpypeline import entrypoint, algorithm, geoimage
+# pylint: disable=no-name-in-module
 from agpypeline.environment import Environment, CheckMD
 from osgeo import gdal, ogr
 
