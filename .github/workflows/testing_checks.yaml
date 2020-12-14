@@ -4,6 +4,7 @@ on:
     branches:
       - master
       - develop
+      - stronger_typing_changes
   pull_request:
     branches:
       - master
