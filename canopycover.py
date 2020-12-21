@@ -223,10 +223,14 @@ def get_plot_species(plot_name: str, full_md: list, args: argparse.Namespace) ->
         priority order): the case-insensitive plot name match, the command line species argument, "Unknown"
     """
     possible = None
+    optional = None
+
     # Disable pylint nested block depth check to avoid 2*N looping (save lower case possibility vs. 2 loops
     # with one check in each)
     # pylint: disable=too-many-nested-blocks
     for one_md in full_md:
+        if 'species' in one_md:
+            optional = one_md['species']
         if 'plots' in one_md:
             for one_plot in one_md['plots']:
                 # Try to find the plot name in 'plots' in a case sensitive way, followed by case insensitive
@@ -242,7 +246,7 @@ def get_plot_species(plot_name: str, full_md: list, args: argparse.Namespace) ->
     if possible is not None:
         return possible
 
-    return args.species if args.species is not None else "Unknown"
+    return args.species if args.species is not None else optional if optional is not None else "Unknown"
 
 
 class CanopyCover(algorithm.Algorithm):
@@ -305,11 +309,11 @@ class CanopyCover(algorithm.Algorithm):
         # Disable pylint checks that would reduce readability
         # pylint: disable=unused-argument,too-many-locals,too-many-branches,too-many-statements
         # Setup local variables
-        timestamp = dateutil.parser.parse(check_md['timestamp'])
-        if timestamp:
-            localtime = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
-        else:
-            localtime = ""
+        localtime = ""
+        if check_md['timestamp']:
+            timestamp = dateutil.parser.parse(check_md['timestamp'])
+            if timestamp:
+                localtime = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
 
         save_csv_filename = os.path.join(check_md['working_folder'], "canopycover.csv")
         save_file = open(save_csv_filename, 'w')
