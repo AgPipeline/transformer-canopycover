@@ -1,4 +1,4 @@
-[![license](https://img.shields.io/badge/license-BSD%203-green?logo=Open-Source-Initiative)](https://github.com/AgPipeline/transformer-canopycover/blob/add_badges/LICENSE)
+[![license](https://img.shields.io/badge/license-BSD%203-green?logo=Open-Source-Initiative)](https://github.com/AgPipeline/transformer-canopycover/blob/master/LICENSE)
 
 [![Enforcing testing](https://github.com/AgPipeline/transformer-canopycover/workflows/Enforcing%20tests/badge.svg)](https://github.com/AgPipeline/transformer-canopycover/actions?query=workflow%3A%22Enforcing+tests%22)
 [![testing](https://github.com/AgPipeline/transformer-canopycover/workflows/Testing%20Docker%20image/badge.svg)](https://github.com/AgPipeline/transformer-canopycover/actions?query=workflow%3A%22Testing+Docker+image%22)
