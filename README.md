@@ -1,3 +1,8 @@
+[![license](https://img.shields.io/badge/license-BSD%203-green?logo=Open-Source-Initiative)](https://github.com/AgPipeline/transformer-canopycover/blob/add_badges/LICENSE)
+
+[![Enforcing testing](https://github.com/AgPipeline/transformer-canopycover/workflows/Enforcing%20tests/badge.svg)](https://github.com/AgPipeline/transformer-canopycover/actions?query=workflow%3A%22Enforcing+tests%22)
+[![testing](https://github.com/AgPipeline/transformer-canopycover/workflows/Testing%20Docker%20image/badge.svg)](https://github.com/AgPipeline/transformer-canopycover/actions?query=workflow%3A%22Testing+Docker+image%22)
+
 # Transformer Canopy Cover
 
 Calculates canopy cover (the percentage pixels identified as a plant) on a plot level for one or more images that have been processed by the [soilmask transformer](https://github.com/AgPipeline/transformer-soilmask) to mask the soil.
