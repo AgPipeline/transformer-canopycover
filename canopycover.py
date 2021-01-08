@@ -4,13 +4,13 @@
 
 import argparse
 import copy
+import datetime
 import logging
 import os
 import subprocess
 import tempfile
 from typing import Union
 import numpy as np
-import dateutil.parser
 from agpypeline import entrypoint, algorithm, geoimage
 from agpypeline.environment import Environment
 from osgeo import gdal, ogr
