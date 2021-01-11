@@ -12,7 +12,8 @@ from typing import Union
 import numpy as np
 import dateutil.parser
 from agpypeline import entrypoint, algorithm, geoimage
-from agpypeline.environment import Environment, CheckMD
+from agpypeline.checkmd import CheckMD
+from agpypeline.environment import Environment
 from osgeo import gdal, ogr
 
 from configuration import ConfigurationCanopycover
@@ -281,7 +282,7 @@ class CanopyCover(algorithm.Algorithm):
         # Make sure there's a tiff file to process
         image_exts = self.supported_file_ext
         found_file = False
-        for one_file in check_md.list_files():
+        for one_file in check_md.files():
             ext = os.path.splitext(one_file)[1]
             if ext and ext in image_exts:
                 found_file = True
@@ -329,7 +330,7 @@ class CanopyCover(algorithm.Algorithm):
         num_files = 0
         total_plots_calculated = 0
         logging.debug("Looking for images with an extension of: %s", ",".join(image_exts))
-        for one_file in check_md.list_files():
+        for one_file in check_md.files():
             ext = os.path.splitext(one_file)[1]
             if not ext or ext not in image_exts:
                 logging.debug("Skipping non-supported file '%s'", one_file)
