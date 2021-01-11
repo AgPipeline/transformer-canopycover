@@ -72,9 +72,9 @@ RUN [ -s /home/extractor/requirements.txt ] && \
     (echo "No python modules to install" && \
     rm /home/extractor/requirements.txt)
 
-#RUN (echo "Installing agpypeline from testpypi" && \
+RUN (echo "Installing agpypeline from testpypi" && \
 #    python3 -m pip uninstall agpypeline && \
-#    python3 -m pip install --index-url https://test.pypi.org/simple/ agpypeline==0.0.77)
+    python3 -m pip install --index-url https://test.pypi.org/simple/ agpypeline==0.0.99)
 
 USER extractor
 COPY configuration.py canopycover.py /home/extractor/

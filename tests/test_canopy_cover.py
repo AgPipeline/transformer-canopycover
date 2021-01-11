@@ -56,16 +56,49 @@ def test_no_args():
     """
     ret_val, out = getstatusoutput(SOURCE_PATH)
     assert ret_val != 0
-    assert re.search('canopycover.py: error: the following arguments are required: -m/--metadata, file_list', out)
+    assert re.search('canopycover.py: error: the following arguments are required: file_list', out)
 
 
 def test_no_metadata():
     """ Run with a file but no metadata"""
-    temp_dir = tempfile.mkdtemp()
-    ret_val, out = getstatusoutput(f'{SOURCE_PATH} --working_space {temp_dir}  {INPUT1}')
-    shutil.rmtree(temp_dir)
-    assert ret_val != 0
-    assert re.search('canopycover.py: error: the following arguments are required: -m/--metadata', out)
+    """Test with good inputs"""
+    out_dir = random_string()
+
+    # This ought not be necessary as the program *should*
+    # create it; for now, we'll create the output dir.
+    os.makedirs(out_dir)
+
+    try:
+        cmd = f'{SOURCE_PATH} {INPUT1} --working_space {out_dir}'
+        ret_val, _ = getstatusoutput(cmd)
+        assert ret_val == 0
+
+        results = os.path.join(out_dir, 'result.json')
+        assert os.path.isfile(results)
+
+        result = json.load(open(results))
+        assert 'files' in result
+        out_files = [f['path'] for f in result['files']]
+
+        canopycover = f'{out_dir}/canopycover.csv'
+        assert canopycover in out_files
+
+        assert os.path.isfile(canopycover)
+
+        canopy = csv.DictReader(open(canopycover))
+        canopy_flds = [
+            'local_datetime', 'canopy_cover', 'species', 'site', 'method'
+        ]
+        assert canopy.fieldnames == canopy_flds
+
+        canopy_data = list(canopy)
+        assert len(canopy_data) == 1
+
+        assert canopy_data[0]['canopy_cover'] == '99.8'
+
+    finally:
+        if os.path.isdir(out_dir):
+            rmtree(out_dir)
 
 
 def test_get_fields():
