@@ -9,12 +9,9 @@ import json
 import os
 import random
 import re
-import shutil
 import string
-import tempfile
 from shutil import rmtree
 from subprocess import getstatusoutput
-#import pytest
 
 # The name of the source file to test and it's path
 SOURCE_FILE = 'canopycover.py'
@@ -61,7 +58,6 @@ def test_no_args():
 
 def test_no_metadata():
     """ Run with a file but no metadata"""
-    """Test with good inputs"""
     out_dir = random_string()
 
     # This ought not be necessary as the program *should*
