@@ -53,7 +53,7 @@ def test_no_args():
     """
     ret_val, out = getstatusoutput(SOURCE_PATH)
     assert ret_val != 0
-    assert re.search('canopycover.py: error: the following arguments are required: file_list', out)
+    assert re.search('Unable to find an image file to work with', out)
 
 
 def test_no_metadata():
