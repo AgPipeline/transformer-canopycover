@@ -56,6 +56,17 @@ def test_no_args():
     assert re.search('Unable to find an image file to work with', out)
 
 
+def test_no_image_files():
+    """
+    Verify that the program returns an error when
+    no file_list is given
+    """
+    cmd = f'{SOURCE_PATH} --metadata {META}'
+    ret_val, out = getstatusoutput(cmd)
+    assert ret_val != 0
+    assert re.search('Unable to find an image file to work with', out)
+
+
 def test_no_metadata():
     """ Run with a file but no metadata"""
     out_dir = random_string()
