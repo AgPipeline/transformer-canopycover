@@ -76,7 +76,7 @@ def test_no_metadata():
     os.makedirs(out_dir)
 
     try:
-        cmd = f'{SOURCE_PATH} {INPUT1} --working_space {out_dir}'
+        cmd = f'{SOURCE_PATH} --working_space {out_dir} {INPUT1}'
         ret_val, _ = getstatusoutput(cmd)
         assert ret_val == 0
 
@@ -192,7 +192,7 @@ def test_good_input():
     os.makedirs(out_dir)
 
     try:
-        cmd = f'{SOURCE_PATH} {INPUT1} --working_space {out_dir} --metadata {META}'
+        cmd = f'{SOURCE_PATH} --working_space {out_dir} --metadata {META} {INPUT1}'
         ret_val, _ = getstatusoutput(cmd)
         assert ret_val == 0
 
