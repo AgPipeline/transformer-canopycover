@@ -276,13 +276,13 @@ class CanopyCover(algorithm.Algorithm):
         """
         # pylint: disable=unused-argument
         # Check that we have what we need
-        if check_md.list_files is None:
+        if check_md.get_list_files() is None:
             return -1, "Unable to find list of files associated with this request"
 
         # Make sure there's a tiff file to process
         image_exts = self.supported_file_ext
         found_file = False
-        for one_file in check_md.files():
+        for one_file in check_md.get_list_files():
             ext = os.path.splitext(one_file)[1]
             if ext and ext in image_exts:
                 found_file = True
@@ -330,7 +330,7 @@ class CanopyCover(algorithm.Algorithm):
         num_files = 0
         total_plots_calculated = 0
         logging.debug("Looking for images with an extension of: %s", ",".join(image_exts))
-        for one_file in check_md.files():
+        for one_file in check_md.get_list_files():
             ext = os.path.splitext(one_file)[1]
             if not ext or ext not in image_exts:
                 logging.debug("Skipping non-supported file '%s'", one_file)
