@@ -78,8 +78,6 @@ RUN (echo "Installing agpypeline from testpypi" && \
 
 USER extractor
 COPY configuration.py canopycover.py /home/extractor/
-COPY test_data/* /home/extractor/test_data/
-COPY tests/* /home/extractor/tests/
 
 USER root
 RUN chmod a+x /home/extractor/canopycover.py
