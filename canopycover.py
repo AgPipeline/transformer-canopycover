@@ -4,13 +4,13 @@
 
 import argparse
 import copy
+import datetime
 import logging
 import os
 import subprocess
 import tempfile
 from typing import Union
 import numpy as np
-import dateutil.parser
 from agpypeline import entrypoint, algorithm, geoimage
 from agpypeline.checkmd import CheckMD
 from agpypeline.environment import Environment
@@ -224,10 +224,14 @@ def get_plot_species(plot_name: str, full_md: list, args: argparse.Namespace) ->
         priority order): the case-insensitive plot name match, the command line species argument, "Unknown"
     """
     possible = None
+    optional = None
+
     # Disable pylint nested block depth check to avoid 2*N looping (save lower case possibility vs. 2 loops
     # with one check in each)
     # pylint: disable=too-many-nested-blocks
     for one_md in full_md:
+        if 'species' in one_md:
+            optional = one_md['species']
         if 'plots' in one_md:
             for one_plot in one_md['plots']:
                 # Try to find the plot name in 'plots' in a case sensitive way, followed by case insensitive
@@ -243,7 +247,25 @@ def get_plot_species(plot_name: str, full_md: list, args: argparse.Namespace) ->
     if possible is not None:
         return possible
 
-    return args.species if args.species is not None else "Unknown"
+    return args.species if args.species is not None else optional if optional is not None else "Unknown"
+
+
+def get_time_stamps(iso_timestamp: str, args: argparse.Namespace) -> list:
+    """Returns the date and the local time (offset is stripped) derived from the passed in timestamp
+    Args:
+        iso_timestamp: the timestamp string
+        args: the command line parameters
+    Return:
+        A list consisting of the date (YYYY-MM-DD) and a local timestamp (YYYY-MM-DDTHH:MM:SS)
+    """
+    if 'timestamp' in args and args.timestamp:
+        timestamp = datetime.datetime.fromisoformat(args.timestamp)
+    elif iso_timestamp:
+        timestamp = datetime.datetime.fromisoformat(iso_timestamp)
+    else:
+        return ['', '']
+
+    return [timestamp.strftime('%Y-%m-%d'), timestamp.strftime('%Y-%m-%dT%H:%M:%S')]
 
 
 class CanopyCover(algorithm.Algorithm):
@@ -262,6 +284,7 @@ class CanopyCover(algorithm.Algorithm):
         # pylint: disable=no-self-use
         parser.add_argument('--species', dest="species", type=str, nargs='?',
                             help="name of the species associated with the canopy cover")
+        parser.add_argument('--timestamp', help='the timestamp to use in ISO 8601 format (eg:YYYY-MM-DDTHH:MM:SS')
 
     def check_continue(self, environment: Environment, check_md: dict, transformer_md: list, full_md: list) -> tuple:
         """Checks if conditions are right for continuing processing
@@ -306,11 +329,7 @@ class CanopyCover(algorithm.Algorithm):
         # Disable pylint checks that would reduce readability
         # pylint: disable=unused-argument,too-many-locals,too-many-branches,too-many-statements
         # Setup local variables
-        timestamp = dateutil.parser.parse(check_md.timestamp)
-        if timestamp:
-            localtime = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
-        else:
-            localtime = ""
+        (_, localtime) = get_time_stamps(check_md.timestamp, environment.args)
 
         save_csv_filename = os.path.join(check_md.working_folder, "canopycover.csv")
         save_file = open(save_csv_filename, 'w')
