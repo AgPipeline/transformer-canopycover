@@ -15,7 +15,7 @@ on:
 
 jobs:
   docker_testing:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     name: Running Docker testing
     steps:
       - name: Fetch source code
