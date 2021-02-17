@@ -12,6 +12,7 @@ import tempfile
 from typing import Union
 import numpy as np
 from agpypeline import entrypoint, algorithm, geoimage
+from agpypeline.checkmd import CheckMD
 from agpypeline.environment import Environment
 from osgeo import gdal, ogr
 
@@ -298,13 +299,13 @@ class CanopyCover(algorithm.Algorithm):
         """
         # pylint: disable=unused-argument
         # Check that we have what we need
-        if 'list_files' not in check_md:
+        if check_md.get_list_files() is None:
             return -1, "Unable to find list of files associated with this request"
 
         # Make sure there's a tiff file to process
         image_exts = self.supported_file_ext
         found_file = False
-        for one_file in check_md['list_files']():
+        for one_file in check_md.get_list_files():
             ext = os.path.splitext(one_file)[1]
             if ext and ext in image_exts:
                 found_file = True
@@ -315,7 +316,7 @@ class CanopyCover(algorithm.Algorithm):
             return (0,)
         raise FileNotFoundError("Unable to find an image file to work with")
 
-    def perform_process(self, environment: Environment, check_md: dict, transformer_md: dict, full_md: list) -> dict:
+    def perform_process(self, environment: Environment, check_md: CheckMD, transformer_md: dict, full_md: list) -> dict:
         """Performs the processing of the data
         Arguments:
             environment: instance of transformer class
@@ -328,9 +329,9 @@ class CanopyCover(algorithm.Algorithm):
         # Disable pylint checks that would reduce readability
         # pylint: disable=unused-argument,too-many-locals,too-many-branches,too-many-statements
         # Setup local variables
-        (_, localtime) = get_time_stamps(check_md['timestamp'], environment.args)
+        (_, localtime) = get_time_stamps(check_md.timestamp, environment.args)
 
-        save_csv_filename = os.path.join(check_md['working_folder'], "canopycover.csv")
+        save_csv_filename = os.path.join(check_md.working_folder, "canopycover.csv")
         save_file = open(save_csv_filename, 'w')
 
         (fields, traits) = get_traits_table()
@@ -348,7 +349,7 @@ class CanopyCover(algorithm.Algorithm):
         num_files = 0
         total_plots_calculated = 0
         logging.debug("Looking for images with an extension of: %s", ",".join(image_exts))
-        for one_file in check_md['list_files']():
+        for one_file in check_md.get_list_files():
             ext = os.path.splitext(one_file)[1]
             if not ext or ext not in image_exts:
                 logging.debug("Skipping non-supported file '%s'", one_file)
