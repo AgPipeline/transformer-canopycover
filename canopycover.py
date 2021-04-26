@@ -332,6 +332,7 @@ class CanopyCover(algorithm.Algorithm):
         (_, localtime) = get_time_stamps(check_md.timestamp, environment.args)
 
         save_csv_filename = os.path.join(check_md.working_folder, "canopycover.csv")
+        # pylint: disable=consider-using-with
         save_file = open(save_csv_filename, 'w')
 
         (fields, traits) = get_traits_table()
