@@ -102,6 +102,8 @@ def _add_image_mask_non_geo(pxarray: np.ndarray) -> np.ndarray:
     channel2 = rolled_image[:, :, 1]
     channel3 = rolled_image[:, :, 2]
     alpha = np.ones(channel1.shape, dtype=channel1.dtype) * 255
+    # Disable this warning since 'cv2.merge' exists
+    # pylint: disable=no-member
     return np.rollaxis(cv2.merge((channel1, channel2, channel3, alpha)), 2, 0)
 
 
