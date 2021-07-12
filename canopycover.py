@@ -10,6 +10,7 @@ import os
 import subprocess
 import tempfile
 from typing import Union
+import cv2
 import numpy as np
 from agpypeline import entrypoint, algorithm, geoimage
 from agpypeline.checkmd import CheckMD
@@ -86,6 +87,24 @@ def _add_image_mask(source_file: str) -> np.ndarray:
         raise RuntimeError('Exception detected while trying to generate alpha mask for image "%s"' % source_file)
 
     return pixels
+
+
+def _add_image_mask_non_geo(pxarray: np.ndarray) -> np.ndarray:
+    """Adds an alpha channel to an image that isn't geo-referenced
+    Arguments:
+        pxarray: the image array to add an alpha channel to
+    Return:
+        Returns the image with an alpha channel added
+    Note: no check is made to see if the image already has an alpha channel
+    """
+    rolled_image = np.rollaxis(pxarray, 0, 3)
+    channel1 = rolled_image[:, :, 0]
+    channel2 = rolled_image[:, :, 1]
+    channel3 = rolled_image[:, :, 2]
+    alpha = np.ones(channel1.shape, dtype=channel1.dtype) * 255
+    # Disable this warning since 'cv2.merge' exists
+    # pylint: disable=no-member
+    return np.rollaxis(cv2.merge((channel1, channel2, channel3, alpha)), 2, 0)
 
 
 def get_fields() -> list:
@@ -357,9 +376,9 @@ class CanopyCover(algorithm.Algorithm):
                 continue
 
             image_bounds = geoimage.get_image_bounds(one_file)
-            if not image_bounds:
-                logging.info("Image file does not appear to be geo-referenced '%s'", one_file)
-                continue
+            # if not image_bounds:
+            #     logging.info("Image file does not appear to be geo-referenced '%s'", one_file)
+            #     continue
 
             overlap_plots = [os.path.basename(os.path.dirname(one_file))]
 
@@ -380,7 +399,7 @@ class CanopyCover(algorithm.Algorithm):
                             image_to_use = pxarray
                         else:
                             logging.info('Adding missing alpha channel to loaded image from "%s"', one_file)
-                            image_to_use = _add_image_mask(one_file)
+                            image_to_use = _add_image_mask(one_file) if image_bounds else _add_image_mask_non_geo(pxarray)
                             del pxarray     # Potentially free up memory
 
                         logging.debug("Calculating canopy cover")
