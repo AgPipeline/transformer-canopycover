@@ -23,6 +23,7 @@ TESTING_JSON_FILE_PATH = os.path.realpath('./test_data')
 # Path to files to use for testing
 META = os.path.abspath(os.path.join(TESTING_JSON_FILE_PATH, 'meta.yaml'))
 INPUT1 = os.path.abspath(os.path.join(TESTING_JSON_FILE_PATH, 'rgb_17_7_W.tif'))
+INPUT_NO_ALPHA = os.path.abspath(os.path.join(TESTING_JSON_FILE_PATH, 'three_channel_mask.tif'))
 
 
 def random_string():
@@ -83,7 +84,8 @@ def test_no_metadata():
         results = os.path.join(out_dir, 'result.json')
         assert os.path.isfile(results)
 
-        result = json.load(open(results))
+        with open(results) as res_file:
+            result = json.load(res_file)
         assert 'files' in result
         out_files = [f['path'] for f in result['files']]
 
@@ -92,7 +94,8 @@ def test_no_metadata():
 
         assert os.path.isfile(canopycover)
 
-        canopy = csv.DictReader(open(canopycover))
+        with open(canopycover) as cc_file:
+            canopy = csv.DictReader(cc_file)
         canopy_flds = [
             'local_datetime', 'canopy_cover', 'species', 'site', 'method'
         ]
@@ -102,6 +105,49 @@ def test_no_metadata():
         assert len(canopy_data) == 1
 
         assert canopy_data[0]['canopy_cover'] == '99.8'
+
+    finally:
+        if os.path.isdir(out_dir):
+            rmtree(out_dir)
+
+
+def test_no_metadata_no_alpha():
+    """ Run with a file that doesn't have an alpha channel, and with no metadata"""
+    out_dir = random_string()
+
+    # This ought not be necessary as the program *should*
+    # create it; for now, we'll create the output dir.
+    os.makedirs(out_dir)
+
+    try:
+        cmd = f'{SOURCE_PATH} --working_space {out_dir} {INPUT_NO_ALPHA}'
+        ret_val, _ = getstatusoutput(cmd)
+        assert ret_val == 0
+
+        results = os.path.join(out_dir, 'result.json')
+        assert os.path.isfile(results)
+
+        with open(results) as res_file:
+            result = json.load(res_file)
+        assert 'files' in result
+        out_files = [f['path'] for f in result['files']]
+
+        canopycover = f'{out_dir}/canopycover.csv'
+        assert canopycover in out_files
+
+        assert os.path.isfile(canopycover)
+
+        with open(canopycover) as cc_file:
+            canopy = csv.DictReader(cc_file)
+        canopy_flds = [
+            'local_datetime', 'canopy_cover', 'species', 'site', 'method'
+        ]
+        assert canopy.fieldnames == canopy_flds
+
+        canopy_data = list(canopy)
+        assert len(canopy_data) == 1
+
+        assert canopy_data[0]['canopy_cover'] == '1.05'
 
     finally:
         if os.path.isdir(out_dir):
@@ -199,7 +245,8 @@ def test_good_input():
         results = os.path.join(out_dir, 'result.json')
         assert os.path.isfile(results)
 
-        result = json.load(open(results))
+        with open(results) as res_file:
+            result = json.load(res_file)
         assert 'files' in result
         out_files = [f['path'] for f in result['files']]
 
@@ -208,7 +255,8 @@ def test_good_input():
 
         assert os.path.isfile(canopycover)
 
-        canopy = csv.DictReader(open(canopycover))
+        with open(canopycover) as  cc_file:
+            canopy = csv.DictReader(cc_file)
         canopy_flds = [
             'local_datetime', 'canopy_cover', 'species', 'site', 'method'
         ]
