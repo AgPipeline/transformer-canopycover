@@ -96,15 +96,15 @@ def test_no_metadata():
 
         with open(canopycover) as cc_file:
             canopy = csv.DictReader(cc_file)
-        canopy_flds = [
-            'local_datetime', 'canopy_cover', 'species', 'site', 'method'
-        ]
-        assert canopy.fieldnames == canopy_flds
+            canopy_flds = [
+                'local_datetime', 'canopy_cover', 'species', 'site', 'method'
+            ]
+            assert canopy.fieldnames == canopy_flds
 
-        canopy_data = list(canopy)
-        assert len(canopy_data) == 1
+            canopy_data = list(canopy)
+            assert len(canopy_data) == 1
 
-        assert canopy_data[0]['canopy_cover'] == '99.8'
+            assert canopy_data[0]['canopy_cover'] == '99.8'
 
     finally:
         if os.path.isdir(out_dir):
@@ -139,15 +139,15 @@ def test_no_metadata_no_alpha():
 
         with open(canopycover) as cc_file:
             canopy = csv.DictReader(cc_file)
-        canopy_flds = [
-            'local_datetime', 'canopy_cover', 'species', 'site', 'method'
-        ]
-        assert canopy.fieldnames == canopy_flds
+            canopy_flds = [
+                'local_datetime', 'canopy_cover', 'species', 'site', 'method'
+            ]
+            assert canopy.fieldnames == canopy_flds
 
-        canopy_data = list(canopy)
-        assert len(canopy_data) == 1
+            canopy_data = list(canopy)
+            assert len(canopy_data) == 1
 
-        assert canopy_data[0]['canopy_cover'] == '1.05'
+            assert canopy_data[0]['canopy_cover'] == '1.05'
 
     finally:
         if os.path.isdir(out_dir):
@@ -257,15 +257,15 @@ def test_good_input():
 
         with open(canopycover) as  cc_file:
             canopy = csv.DictReader(cc_file)
-        canopy_flds = [
-            'local_datetime', 'canopy_cover', 'species', 'site', 'method'
-        ]
-        assert canopy.fieldnames == canopy_flds
+            canopy_flds = [
+                'local_datetime', 'canopy_cover', 'species', 'site', 'method'
+            ]
+            assert canopy.fieldnames == canopy_flds
 
-        canopy_data = list(canopy)
-        assert len(canopy_data) == 1
+            canopy_data = list(canopy)
+            assert len(canopy_data) == 1
 
-        assert canopy_data[0]['canopy_cover'] == '99.8'
+            assert canopy_data[0]['canopy_cover'] == '99.8'
 
     finally:
         if os.path.isdir(out_dir):
