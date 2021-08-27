@@ -48,7 +48,7 @@ def _add_image_mask(source_file: str) -> np.ndarray:
     try:
         # Create the list file
         _, file_list_name = tempfile.mkstemp('.txt', 'list_')
-        with open(file_list_name, 'w') as out_file:
+        with open(file_list_name, 'w', encoding='utf-8') as out_file:
             out_file.write(os.path.abspath(source_file))
 
         # Create the VRT (virtual) file name
@@ -352,7 +352,7 @@ class CanopyCover(algorithm.Algorithm):
 
         save_csv_filename = os.path.join(check_md.working_folder, "canopycover.csv")
         # pylint: disable=consider-using-with
-        save_file = open(save_csv_filename, 'w')
+        save_file = open(save_csv_filename, 'w', encoding='utf-8')
 
         (fields, traits) = get_traits_table()
 
