@@ -84,7 +84,7 @@ def test_no_metadata():
         results = os.path.join(out_dir, 'result.json')
         assert os.path.isfile(results)
 
-        with open(results) as res_file:
+        with open(results, encoding='utf-8') as res_file:
             result = json.load(res_file)
         assert 'files' in result
         out_files = [f['path'] for f in result['files']]
@@ -94,7 +94,7 @@ def test_no_metadata():
 
         assert os.path.isfile(canopycover)
 
-        with open(canopycover) as cc_file:
+        with open(canopycover, encoding='utf-8') as cc_file:
             canopy = csv.DictReader(cc_file)
             canopy_flds = [
                 'local_datetime', 'canopy_cover', 'species', 'site', 'method'
@@ -127,7 +127,7 @@ def test_no_metadata_no_alpha():
         results = os.path.join(out_dir, 'result.json')
         assert os.path.isfile(results)
 
-        with open(results) as res_file:
+        with open(results, encoding='utf-8') as res_file:
             result = json.load(res_file)
         assert 'files' in result
         out_files = [f['path'] for f in result['files']]
@@ -137,7 +137,7 @@ def test_no_metadata_no_alpha():
 
         assert os.path.isfile(canopycover)
 
-        with open(canopycover) as cc_file:
+        with open(canopycover, encoding='utf-8') as cc_file:
             canopy = csv.DictReader(cc_file)
             canopy_flds = [
                 'local_datetime', 'canopy_cover', 'species', 'site', 'method'
@@ -216,7 +216,7 @@ def test_generate_traits_list():
 
     # Check fields for each entry from test file
     fields = cc.get_fields()
-    with open(data_file_name, 'r') as in_file:
+    with open(data_file_name, 'r', encoding='utf-8') as in_file:
         test_data = json.load(in_file)
         for test in test_data:
             trait_list = cc.generate_traits_list(test)
@@ -245,7 +245,7 @@ def test_good_input():
         results = os.path.join(out_dir, 'result.json')
         assert os.path.isfile(results)
 
-        with open(results) as res_file:
+        with open(results, encoding='utf-8') as res_file:
             result = json.load(res_file)
         assert 'files' in result
         out_files = [f['path'] for f in result['files']]
@@ -255,7 +255,7 @@ def test_good_input():
 
         assert os.path.isfile(canopycover)
 
-        with open(canopycover) as  cc_file:
+        with open(canopycover, encoding='utf-8') as cc_file:
             canopy = csv.DictReader(cc_file)
             canopy_flds = [
                 'local_datetime', 'canopy_cover', 'species', 'site', 'method'
