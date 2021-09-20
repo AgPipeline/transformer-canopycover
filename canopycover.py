@@ -121,10 +121,6 @@ def get_default_trait(trait_name: str) -> Union[str, list]:
         If the default value for a trait is configured, that value is returned. Otherwise
         an empty string is returned.
     """
-    # pylint: disable=global-statement
-    global TRAIT_NAME_ARRAY_VALUE
-    global TRAIT_NAME_MAP
-
     if trait_name in TRAIT_NAME_ARRAY_VALUE:
         return []  # Return an empty list when the name matches
     if trait_name in TRAIT_NAME_MAP:
