@@ -296,7 +296,6 @@ class CanopyCover(algorithm.Algorithm):
         Arguments:
             parser: instance of argparse
         """
-        # pylint: disable=no-self-use
         parser.add_argument('--species', dest="species", type=str, nargs='?',
                             help="name of the species associated with the canopy cover")
         parser.add_argument('--timestamp', help='the timestamp to use in ISO 8601 format (eg:YYYY-MM-DDTHH:MM:SS')
